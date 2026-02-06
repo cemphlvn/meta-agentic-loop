@@ -278,12 +278,37 @@ Forward, always forward.
 /loop continue           # Continue from where we stopped
 /loop shift              # Trigger SHIFT_FELT, re-read remembrance
 
+# Procedural loop runner (scripts/loop-runner.sh)
+./scripts/loop-runner.sh            # Run one REMEMBER→OBSERVE→DECIDE→ACT→LEARN iteration
+./scripts/loop-runner.sh --status   # Show current loop state
+./scripts/loop-runner.sh --continuous  # Keep looping until blocked
+
 # Cultural frame selection
 /frame turkish           # Duty + power within mode
 /frame chinese           # Continuous cultivation mode
 /frame english           # Pragmatic iteration mode
 /frame unified           # Synthesize all three (default)
 ```
+
+### Procedural Loop Implementation
+
+The `loop-runner.sh` script provides a procedural implementation:
+
+```
+REMEMBER ──→ Load .remembrance (wisdom precedes action)
+    │
+OBSERVE ──→ Scan alpha states, ready items, blockers, gaps
+    │
+DECIDE ──→ Determine next action and route to agent
+    │
+ACT ──→ Execute via appropriate agent
+    │
+LEARN ──→ Reflect, detect shift_felt, increment iteration
+    │
+└────→ CONTINUE (while true, 不进则退)
+```
+
+State persisted in `.loop-state.yaml` between sessions.
 
 ---
 
