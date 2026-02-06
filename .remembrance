@@ -35,3 +35,29 @@ context: initialization
 truth: The loop begins. Wisdom accumulates through experience.
 confidence: 1.0
 ---
+
+---
+timestamp: 2026-02-07T13:15:00Z
+agent: system
+scope: system
+ticket: INTEGRATION-001
+observed: |
+  Claude Code hooks are passive: inject context, block tools.
+  Cannot invoke Claude, cannot auto-loop, cannot trigger commands.
+  Scripts that output "Would invoke..." don't actually invoke.
+reasoning: |
+  Context7 documentation confirms hook limitations.
+  The "eternal forward loop" requires user participation.
+  This is by design: user agency is augmented, not bypassed.
+action: |
+  1. Created .claude/skills/loop.md (proper skill definition)
+  2. Created docs/INTEGRATION_REALITY.md (honest documentation)
+  3. Added scripts/loop-runner.sh (diagnostic tool)
+  4. Updated CORE_LOOP.md with script reference
+outcome: |
+  Mental model corrected. Integration documented truthfully.
+  The loop continues THROUGH user interaction.
+truth: Claude Code hooks inject context but cannot invoke Claude. The user IS the loop.
+confidence: 1.0
+shape_shift: true
+---
