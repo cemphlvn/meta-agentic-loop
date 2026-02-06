@@ -15,8 +15,13 @@ PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Defaults
 PROJECT_NAME="${1:-$(basename $(pwd))}"
 PHILOSOPHY="unified"
-TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 SPRINT_GOAL="Foundation & Core Setup"
+
+# Generate sequential timestamps (1 second apart for ordering)
+TIMESTAMP_1=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+sleep 1
+TIMESTAMP_2=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+TIMESTAMP="${TIMESTAMP_1}"  # For CLAUDE.md compatibility
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -95,6 +100,8 @@ sed -e "s/{{PROJECT_NAME}}/${PROJECT_NAME}/g" \
 echo -e "${GREEN}Creating .remembrance...${NC}"
 
 sed -e "s/{{PROJECT_NAME}}/${PROJECT_NAME}/g" \
+    -e "s/{{TIMESTAMP_1}}/${TIMESTAMP_1}/g" \
+    -e "s/{{TIMESTAMP_2}}/${TIMESTAMP_2}/g" \
     -e "s/{{TIMESTAMP}}/${TIMESTAMP}/g" \
     "$PLUGIN_ROOT/templates/remembrance.tmpl" > .remembrance
 
