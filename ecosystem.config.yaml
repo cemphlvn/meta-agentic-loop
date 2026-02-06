@@ -1,0 +1,27 @@
+# Meta-Agentic Loop — Plugin Configuration
+
+ecosystem:
+  name: meta-agentic-loop
+  version: 1.0.0
+  type: plugin
+
+instances:
+  humanitic:
+    repo: "github.com/cemphlvn/humanitic"
+    license: "Humanitic Open License v1.0"
+    description: "Open collaborative ecosystem with founder rewards"
+
+defaults:
+  contribution:
+    method: cei-to-github
+    workflow: fork-pr
+    auto_create_pr: true
+  
+  permissions:
+    governance:
+      read: all
+      write: master-only
+    agents:
+      read: all
+      write: master-only
+      propose: all

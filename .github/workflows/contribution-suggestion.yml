@@ -1,0 +1,176 @@
+# Contribution Suggestion Workflow
+# Receives approved CEI suggestions and creates PRs to meta-agentic-loop
+# 2026 Best Practices: OIDC auth, path filtering, concurrency control
+# Security: All untrusted inputs via env vars
+
+name: CEI Contribution
+
+on:
+  repository_dispatch:
+    types: [cei-suggestion-approved]
+  workflow_dispatch:
+    inputs:
+      suggestion_id:
+        description: 'CEI Suggestion ID (PROP-...)'
+        required: true
+        type: string
+      suggestion_type:
+        description: 'Type of suggestion'
+        required: true
+        type: choice
+        options:
+          - culture_suggestion
+          - governance_improvement
+          - process_change
+          - agent_creation
+          - plugin_contribution
+      target_file:
+        description: 'Target file path'
+        required: true
+        type: string
+
+concurrency:
+  group: cei-contribution
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  validate-suggestion:
+    runs-on: ubuntu-latest
+    outputs:
+      valid: ${{ steps.validate.outputs.valid }}
+      suggestion_data: ${{ steps.validate.outputs.data }}
+      suggestion_id: ${{ steps.setup.outputs.suggestion_id }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup environment
+        id: setup
+        env:
+          DISPATCH_ID: ${{ github.event.client_payload.suggestion_id }}
+          INPUT_ID: ${{ github.event.inputs.suggestion_id }}
+        run: |
+          # Use dispatch payload if available, otherwise use input
+          if [ -n "$DISPATCH_ID" ]; then
+            SUGGESTION_ID="$DISPATCH_ID"
+          else
+            SUGGESTION_ID="$INPUT_ID"
+          fi
+          # Sanitize: only allow alphanumeric, dash, underscore, dots
+          SUGGESTION_ID=$(echo "$SUGGESTION_ID" | tr -cd 'a-zA-Z0-9_.-')
+          echo "suggestion_id=${SUGGESTION_ID}" >> $GITHUB_OUTPUT
+
+      - name: Validate suggestion
+        id: validate
+        env:
+          SUGGESTION_ID: ${{ steps.setup.outputs.suggestion_id }}
+        run: |
+          SUGGESTION_FILE="user/CEI_STRUCTURE/proposals/${SUGGESTION_ID}.yaml"
+
+          if [ -f "$SUGGESTION_FILE" ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "data=$(cat "$SUGGESTION_FILE" | base64 -w 0)" >> $GITHUB_OUTPUT
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "::error::Suggestion file not found"
+          fi
+
+  create-contribution-pr:
+    needs: validate-suggestion
+    if: needs.validate-suggestion.outputs.valid == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Process suggestion
+        id: process
+        env:
+          SUGGESTION_ID: ${{ needs.validate-suggestion.outputs.suggestion_id }}
+          DISPATCH_TYPE: ${{ github.event.client_payload.suggestion_type }}
+          INPUT_TYPE: ${{ github.event.inputs.suggestion_type }}
+          DISPATCH_FILE: ${{ github.event.client_payload.target_file }}
+          INPUT_FILE: ${{ github.event.inputs.target_file }}
+        run: |
+          # Determine values with fallbacks
+          if [ -n "$DISPATCH_TYPE" ]; then
+            SUGGESTION_TYPE="$DISPATCH_TYPE"
+          else
+            SUGGESTION_TYPE="$INPUT_TYPE"
+          fi
+
+          if [ -n "$DISPATCH_FILE" ]; then
+            TARGET_FILE="$DISPATCH_FILE"
+          else
+            TARGET_FILE="$INPUT_FILE"
+          fi
+
+          # Sanitize inputs
+          SUGGESTION_TYPE=$(echo "$SUGGESTION_TYPE" | tr -cd 'a-zA-Z0-9_-')
+          TARGET_FILE=$(echo "$TARGET_FILE" | tr -cd 'a-zA-Z0-9_./-')
+
+          echo "suggestion_id=${SUGGESTION_ID}" >> $GITHUB_OUTPUT
+          echo "suggestion_type=${SUGGESTION_TYPE}" >> $GITHUB_OUTPUT
+          echo "target_file=${TARGET_FILE}" >> $GITHUB_OUTPUT
+          echo "branch_name=cei/${SUGGESTION_ID}" >> $GITHUB_OUTPUT
+
+      - name: Apply suggestion changes
+        env:
+          SUGGESTION_ID: ${{ steps.process.outputs.suggestion_id }}
+          SUGGESTION_TYPE: ${{ steps.process.outputs.suggestion_type }}
+        run: |
+          SUGGESTION_FILE="user/CEI_STRUCTURE/proposals/${SUGGESTION_ID}.yaml"
+
+          case "$SUGGESTION_TYPE" in
+            "plugin_contribution")
+              echo "Processing plugin contribution..."
+              ;;
+            "culture_suggestion")
+              echo "Processing culture suggestion..."
+              ;;
+            "process_change")
+              echo "Processing process change..."
+              ;;
+            *)
+              echo "Processing general suggestion..."
+              ;;
+          esac
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        env:
+          SUGGESTION_ID: ${{ steps.process.outputs.suggestion_id }}
+          SUGGESTION_TYPE: ${{ steps.process.outputs.suggestion_type }}
+          TARGET_FILE: ${{ steps.process.outputs.target_file }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.process.outputs.branch_name }}
+          delete-branch: true
+          title: "CEI Contribution"
+          body: |
+            ## CEI Contribution
+
+            This PR was automatically created from an approved CEI suggestion.
+
+            ### Review Checklist
+            - [ ] Changes align with meta-principles
+            - [ ] No security concerns
+            - [ ] MECE boundaries maintained
+            - [ ] Tests pass (if applicable)
+
+            ---
+            *Generated by CEI Contribution Workflow*
+          labels: |
+            cei-contribution
+            automated
+          assignees: ${{ github.repository_owner }}

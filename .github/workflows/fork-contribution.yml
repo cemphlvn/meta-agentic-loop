@@ -1,0 +1,147 @@
+# Fork Contribution Workflow
+# For external contributors who fork the repo
+# Validates suggestions meet meta-agentic-loop standards
+# Security: Uses pull_request_target safely with explicit checkout
+
+name: Fork Contribution Validator
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'user/CEI_STRUCTURE/proposals/**'
+      - '.claude/agents/**'
+      - 'processes/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  validate-fork-contribution:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base repository (safe)
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Check if from fork
+        id: check-fork
+        env:
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        run: |
+          echo "is_fork=${IS_FORK}" >> $GITHUB_OUTPUT
+
+      - name: Fetch PR changes (sparse, safe)
+        if: steps.check-fork.outputs.is_fork == 'true'
+        env:
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Only fetch specific safe paths from PR
+          git fetch origin "$PR_SHA" --depth=1
+          git diff --name-only "${{ github.event.pull_request.base.sha }}" "$PR_SHA" > changed_files.txt
+
+      - name: Validate proposal files
+        id: validate
+        if: steps.check-fork.outputs.is_fork == 'true'
+        run: |
+          ERRORS=""
+          VALID="true"
+
+          # Check for governance file modifications (forbidden)
+          if grep -q "\.claude/governance/" changed_files.txt 2>/dev/null; then
+            ERRORS="${ERRORS}Cannot modify governance files directly. Use CEI proposal.\n"
+            VALID="false"
+          fi
+
+          # Validate any proposal YAML files in the diff
+          while IFS= read -r file; do
+            if [[ "$file" == user/CEI_STRUCTURE/proposals/*.yaml ]]; then
+              if [ -f "$file" ]; then
+                # Check required fields
+                for field in id agent type proposal confidence; do
+                  if ! grep -q "^${field}:" "$file" 2>/dev/null; then
+                    ERRORS="${ERRORS}Missing field '${field}' in ${file}\n"
+                    VALID="false"
+                  fi
+                done
+              fi
+            fi
+
+            # Check agent files for MECE
+            if [[ "$file" == .claude/agents/*.md ]]; then
+              if [ -f "$file" ] && ! grep -q "## MECE Boundaries" "$file" 2>/dev/null; then
+                ERRORS="${ERRORS}Agent missing MECE Boundaries: ${file}\n"
+                VALID="false"
+              fi
+            fi
+          done < changed_files.txt
+
+          echo "valid=${VALID}" >> $GITHUB_OUTPUT
+          if [ -n "$ERRORS" ]; then
+            # Write errors to file to avoid shell escaping issues
+            printf '%b' "$ERRORS" > validation_errors.txt
+          fi
+
+      - name: Post validation results
+        if: steps.check-fork.outputs.is_fork == 'true'
+        uses: actions/github-script@v7
+        env:
+          VALID: ${{ steps.validate.outputs.valid }}
+        with:
+          script: |
+            const fs = require('fs');
+            const valid = process.env.VALID === 'true';
+
+            let body = '';
+            let status = 'success';
+
+            if (!valid) {
+              let errors = '';
+              try {
+                errors = fs.readFileSync('validation_errors.txt', 'utf8');
+              } catch (e) {
+                errors = 'Unknown validation error';
+              }
+
+              body = `## Validation Failed
+
+            The following issues were found:
+
+            \`\`\`
+            ${errors}
+            \`\`\`
+
+            Please fix these issues and push again.
+
+            **Note**: Governance files are USER-ONLY. To suggest governance changes, create a proposal in \`user/CEI_STRUCTURE/proposals/\`.`;
+              status = 'failure';
+            } else {
+              body = `## Validation Passed
+
+            Your contribution meets meta-agentic-loop standards.
+
+            - Required fields present
+            - MECE boundaries defined
+            - No governance violations
+
+            Awaiting maintainer review.`;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request.head.sha,
+              state: status,
+              context: 'CEI Validation',
+              description: valid ? 'Contribution valid' : 'Validation failed'
+            });
