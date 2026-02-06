@@ -24,4 +24,4 @@ fi
 
 # Load scoped remembrance
 cd "$PROJECT_ROOT"
-node "$SCRIPT_DIR/scoped-remembrance.js" read "$AGENT_ID"
+node "$SCRIPT_DIR/scoped-remembrance.cjs" read "$AGENT_ID"

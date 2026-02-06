@@ -26,7 +26,7 @@ fi
 cd "$PROJECT_ROOT"
 while IFS= read -r truth_json || [ -n "$truth_json" ]; do
     if [ -n "$truth_json" ]; then
-        node "$SCRIPT_DIR/scoped-remembrance.js" write "$AGENT_ID" "$truth_json"
+        node "$SCRIPT_DIR/scoped-remembrance.cjs" write "$AGENT_ID" "$truth_json"
         echo "Persisted truth for agent: $AGENT_ID"
     fi
 done < "$SESSION_TRUTHS"
