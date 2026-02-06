@@ -1,0 +1,240 @@
+# Agentic Contribution Workflow
+# Uses policy agents to decide: auto-approve, request-review, or escalate
+
+name: Agentic Contribution Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  repository_dispatch:
+    types: [contribution-submitted]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  analyze:
+    name: Policy Agent Analysis
+    runs-on: ubuntu-latest
+    outputs:
+      decision: ${{ steps.policy.outputs.decision }}
+      risk_level: ${{ steps.policy.outputs.risk_level }}
+      reasons: ${{ steps.policy.outputs.reasons }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files -q '.files[].path' | tr '\n' ' ')
+          else
+            FILES="${{ github.event.client_payload.files }}"
+          fi
+          echo "changed=$FILES" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Policy Agent Decision
+        id: policy
+        run: |
+          FILES="${{ steps.files.outputs.changed }}"
+          DECISION="auto-approve"
+          RISK_LEVEL="low"
+          REASONS=""
+
+          # Check each file against policies
+          for FILE in $FILES; do
+            # Governance files = escalate
+            if [[ "$FILE" == .claude/governance/* ]]; then
+              DECISION="escalate"
+              RISK_LEVEL="high"
+              REASONS="${REASONS}Governance file modified: $FILE. "
+            fi
+
+            # Agent modifications = review
+            if [[ "$FILE" == .claude/agents/*.md ]] && [ "$DECISION" != "escalate" ]; then
+              # Check if modifying existing vs new
+              if git show HEAD:"$FILE" &>/dev/null 2>&1; then
+                DECISION="request-review"
+                RISK_LEVEL="medium"
+                REASONS="${REASONS}Existing agent modified: $FILE. "
+              fi
+            fi
+
+            # Script changes = review
+            if [[ "$FILE" == scripts/* ]] && [ "$DECISION" != "escalate" ]; then
+              DECISION="request-review"
+              RISK_LEVEL="medium"
+              REASONS="${REASONS}Script modified: $FILE. "
+            fi
+
+            # Security-sensitive patterns
+            if grep -l -E "(secret|password|token|key|credential)" "$FILE" 2>/dev/null; then
+              DECISION="escalate"
+              RISK_LEVEL="high"
+              REASONS="${REASONS}Security-sensitive content in: $FILE. "
+            fi
+          done
+
+          # Safe patterns (can override to auto-approve if no risks found)
+          if [ "$DECISION" = "auto-approve" ]; then
+            REASONS="All changes are documentation, tests, or non-breaking additions."
+          fi
+
+          echo "decision=$DECISION" >> $GITHUB_OUTPUT
+          echo "risk_level=$RISK_LEVEL" >> $GITHUB_OUTPUT
+          echo "reasons=$REASONS" >> $GITHUB_OUTPUT
+
+          echo "Decision: $DECISION"
+          echo "Risk Level: $RISK_LEVEL"
+          echo "Reasons: $REASONS"
+
+  auto-approve:
+    name: Auto-Approve Safe Changes
+    needs: analyze
+    if: needs.analyze.outputs.decision == 'auto-approve'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Approve PR
+        run: |
+          gh pr review ${{ github.event.pull_request.number }} --approve \
+            --body "🤖 **Auto-approved by Policy Agent**
+
+          Risk Level: ${{ needs.analyze.outputs.risk_level }}
+
+          Reasons: ${{ needs.analyze.outputs.reasons }}
+
+          This PR meets safe contribution criteria and has been automatically approved."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --auto --squash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  request-review:
+    name: Request Human Review
+    needs: analyze
+    if: needs.analyze.outputs.decision == 'request-review'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add review label
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "needs-review"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "🔍 **Review Requested by Policy Agent**
+
+          Risk Level: ${{ needs.analyze.outputs.risk_level }}
+
+          Reasons: ${{ needs.analyze.outputs.reasons }}
+
+          A maintainer will review this PR. This is not a rejection - it just requires human judgment."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  escalate:
+    name: Escalate to Admin
+    needs: analyze
+    if: needs.analyze.outputs.decision == 'escalate'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add escalation labels
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "escalated,admin-review"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create admin issue
+        run: |
+          ISSUE_BODY="## Escalated Contribution
+
+          **PR:** #${{ github.event.pull_request.number }}
+          **Author:** @${{ github.event.pull_request.user.login }}
+          **Risk Level:** ${{ needs.analyze.outputs.risk_level }}
+
+          ### Reasons for Escalation
+          ${{ needs.analyze.outputs.reasons }}
+
+          ### Action Required
+          Please review this PR and either:
+          1. Approve if changes are acceptable
+          2. Request changes if modifications needed
+          3. Close if not appropriate
+
+          /cc @cemkoc"
+
+          gh issue create \
+            --title "🚨 Escalated: PR #${{ github.event.pull_request.number }} requires admin review" \
+            --body "$ISSUE_BODY" \
+            --label "escalated,admin-review" \
+            --assignee "cemkoc"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "🚨 **Escalated to Admin by Policy Agent**
+
+          Risk Level: ${{ needs.analyze.outputs.risk_level }}
+
+          Reasons: ${{ needs.analyze.outputs.reasons }}
+
+          This PR has been escalated to project administrators. An issue has been created for tracking.
+
+          This does not mean your contribution is rejected - it means it requires careful review due to the nature of changes."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-vector:
+    name: Update Contribution Vector
+    needs: [analyze, auto-approve]
+    if: always() && needs.auto-approve.result == 'success'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Update contributor vector
+        run: |
+          CONTRIBUTOR="${{ github.event.pull_request.user.login }}"
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          # Append to contribution log
+          mkdir -p .contributions
+          echo "- date: $DATE" >> .contributions/log.yaml
+          echo "  contributor: $CONTRIBUTOR" >> .contributions/log.yaml
+          echo "  pr: ${{ github.event.pull_request.number }}" >> .contributions/log.yaml
+          echo "  type: auto-approved" >> .contributions/log.yaml
+          echo "" >> .contributions/log.yaml
+
+      - name: Commit vector update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .contributions/
+          git commit -m "Update contribution vector for PR #${{ github.event.pull_request.number }}" || true
+          git push || true
