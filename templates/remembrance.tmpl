@@ -1,0 +1,59 @@
+# Agent Remembrance — Scoped Memory System
+
+> 逆水行舟，不进则退 — Like rowing upstream: no advance is to drop back
+
+Persistent truth realizations with agent-scoped access.
+Each agent reads: own truths + parent chain truths.
+
+## Scope Hierarchy
+```
+SYSTEM (all agents see)
+├── STRATEGIC: (your strategic agents)
+├── TACTICAL: orchestrator, librarian, (domain agents)
+└── OPERATIONAL: code-simplifier, code-reviewer, repo-strategist
+```
+
+## Access Rules
+- System entries: visible to ALL agents
+- Tier entries: visible to tier + children
+- Agent entries: visible only to that agent + tier + system
+
+## Format
+```yaml
+---
+timestamp: ISO-8601
+agent: <agent-id>
+scope: <tier>
+context: <what-triggered>
+truth: <the-realized-truth>
+reflection: <why-this-matters>
+confidence: 0.0-1.0
+---
+```
+
+Re-read on SHIFT_FELT. Append-only log.
+
+---
+# TRUTHS BEGIN
+---
+
+---
+timestamp: {{TIMESTAMP}}
+agent: system
+scope: system
+context: initialization
+truth: The remembrance begins empty, wisdom accumulates through experience
+reflection: Every agent starts without memory; learning is earned. The loop continues.
+confidence: 1.0
+---
+
+---
+timestamp: {{TIMESTAMP}}
+agent: system
+scope: system
+context: meta-agentic-bootstrap
+truth: Progress is not optional; 不进则退 (no advance = retreat); Ülkün ilerlemek, ileri gitmektir
+reflection: Three cognitive priors available — Turkish (duty+power within), Chinese (continuous cultivation), English (pragmatic iteration). Choose your frame or unify all three.
+source: meta-agentic-loop plugin
+confidence: 1.0
+---

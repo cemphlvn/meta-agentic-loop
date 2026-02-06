@@ -1,0 +1,106 @@
+{
+  "name": "meta-agentic-loop",
+  "version": "1.0.0",
+  "description": "Self-continuing agentic framework with scoped memory, MECE agents, and essence-based scrum. The eternal forward loop.",
+  "author": "logicsticks.ai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/logicsticks/meta-agentic-loop"
+  },
+  "keywords": [
+    "agentic",
+    "meta-framework",
+    "scrum",
+    "essence",
+    "mece",
+    "claude-code",
+    "continuity",
+    "self-continuing",
+    "scoped-memory"
+  ],
+  "components": {
+    "commands": [
+      {
+        "name": "init",
+        "description": "Initialize project with meta-agentic framework"
+      },
+      {
+        "name": "start",
+        "description": "Boot up and show chance points"
+      },
+      {
+        "name": "loop",
+        "description": "Core loop commands (continue, shift)"
+      },
+      {
+        "name": "frame",
+        "description": "Switch cognitive frames (turkish, chinese, english)"
+      }
+    ],
+    "agents": [
+      {
+        "name": "orchestrator",
+        "description": "Main orchestration pattern with MECE routing"
+      },
+      {
+        "name": "librarian",
+        "description": "Document curation with depth-based delivery"
+      },
+      {
+        "name": "code-simplifier",
+        "description": "Complexity reduction feedback agent"
+      },
+      {
+        "name": "repo-strategist",
+        "description": "Structure alignment feedback agent"
+      }
+    ],
+    "skills": [
+      "core-loop",
+      "scoped-remembrance",
+      "essence-scrum",
+      "process-workflows",
+      "agent-methodology"
+    ],
+    "hooks": {
+      "SessionStart": "Load scoped remembrance and state",
+      "Stop": "Persist session learnings"
+    }
+  },
+  "philosophy": {
+    "turkish": {
+      "quote": "Ülkün ilerlemek, ileri gitmektir",
+      "translation": "Your ideal is to progress, to go forward",
+      "archetype": "Guardian",
+      "principle": "Duty + Power Within"
+    },
+    "chinese": {
+      "quote": "逆水行舟，不进则退",
+      "translation": "Like rowing upstream: no advance is to drop back",
+      "archetype": "Sage",
+      "principle": "Continuous Cultivation"
+    },
+    "english": {
+      "quote": "Forward, always forward",
+      "translation": "Forward, always forward",
+      "archetype": "Builder",
+      "principle": "Pragmatic Iteration"
+    }
+  },
+  "dependencies": {
+    "mcpServers": {
+      "context7": {
+        "command": "npx",
+        "args": ["-y", "@context7/mcp-server"],
+        "description": "Up-to-date documentation retrieval"
+      }
+    }
+  },
+  "templates": {
+    "CLAUDE.md": "templates/CLAUDE.md.tmpl",
+    ".remembrance": "templates/remembrance.tmpl",
+    "scrum": "templates/scrum/",
+    "processes": "templates/processes/"
+  }
+}

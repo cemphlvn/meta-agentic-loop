@@ -1,0 +1,53 @@
+{
+  "name": "@meta-agentic/loop",
+  "version": "1.0.0",
+  "description": "Self-continuing agentic framework with scoped memory, MECE agents, and essence-based scrum",
+  "main": "index.js",
+  "bin": {
+    "meta-loop": "./bin/meta-loop.js"
+  },
+  "scripts": {
+    "init": "./scripts/init-project.sh",
+    "test": "echo \"Tests not yet implemented\"",
+    "lint": "echo \"Linting not yet configured\""
+  },
+  "keywords": [
+    "claude-code",
+    "agentic",
+    "meta-framework",
+    "scrum",
+    "essence",
+    "mece",
+    "self-continuing",
+    "scoped-memory",
+    "orchestration"
+  ],
+  "author": "logicsticks.ai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/logicsticks/meta-agentic-loop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/logicsticks/meta-agentic-loop/issues"
+  },
+  "homepage": "https://github.com/logicsticks/meta-agentic-loop#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    ".claude-plugin/",
+    "commands/",
+    "agents/",
+    "skills/",
+    "hooks/",
+    "templates/",
+    "scripts/",
+    "bin/",
+    "README.md"
+  ],
+  "claude-plugin": {
+    "name": "meta-agentic-loop",
+    "version": "1.0.0"
+  }
+}

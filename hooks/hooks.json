@@ -1,0 +1,40 @@
+{
+  "SessionStart": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh",
+          "timeout": 10,
+          "description": "Load state and scoped remembrance"
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-end.sh",
+          "timeout": 10,
+          "description": "Persist session learnings to scoped remembrance"
+        }
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "Task",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Verify agent being invoked has appropriate scope for the task",
+          "timeout": 5
+        }
+      ]
+    }
+  ]
+}
