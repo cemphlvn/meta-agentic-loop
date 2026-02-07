@@ -39,6 +39,18 @@
           "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-end.sh",
           "timeout": 10,
           "description": "Persist session learnings to scoped remembrance"
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/meta-round.sh quick 2>/dev/null || echo 'Meta-round skipped'",
+          "timeout": 15,
+          "description": "Quick meta-round: update indexes, check alignment"
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/observability/truth-tracker.sh snapshot 2>/dev/null || echo 'Snapshot skipped'",
+          "timeout": 5,
+          "description": "Save observability snapshot"
         }
       ]
     }
