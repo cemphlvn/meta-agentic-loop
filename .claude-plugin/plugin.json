@@ -1,12 +1,16 @@
 {
   "name": "meta-agentic-loop",
-  "version": "1.0.0",
-  "description": "Self-continuing agentic framework with scoped memory, MECE agents, and essence-based scrum. The eternal forward loop.",
-  "author": "logicsticks.ai",
+  "version": "0.2.0",
+  "description": "Self-continuing agentic framework with Ralph Wiggum loops, scoped memory, MECE agents, and meta-improvement. The eternal forward loop.",
+  "author": {
+    "name": "cemphlvn",
+    "url": "https://github.com/cemphlvn"
+  },
   "license": "MIT",
+  "homepage": "https://github.com/cemphlvn/meta-agentic-loop",
   "repository": {
     "type": "git",
-    "url": "https://github.com/logicsticks/meta-agentic-loop"
+    "url": "https://github.com/cemphlvn/meta-agentic-loop.git"
   },
   "keywords": [
     "agentic",
@@ -17,7 +21,10 @@
     "claude-code",
     "continuity",
     "self-continuing",
-    "scoped-memory"
+    "scoped-memory",
+    "ralph-wiggum",
+    "non-stopping",
+    "auto-continuation"
   ],
   "components": {
     "commands": [
@@ -65,9 +72,10 @@
       "playground",
       "advanced-techniques"
     ],
-    "hooks": {
+    "hooks": "./hooks/hooks.json",
+    "hooksDescription": {
       "SessionStart": "Load scoped remembrance, state, and playground context",
-      "Stop": "Persist session learnings and metrics"
+      "Stop": "Ralph Wiggum: Block exit if loop active, persist learnings, meta-evaluate"
     },
     "playground": {
       "description": "Higher-order observability interface",
