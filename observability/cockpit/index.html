@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta-Observability Cockpit | Logicsticks.ai</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════════
+           CII DESIGN SYSTEM — Cognitive Interface Intelligence
+           Principles: Intent-driven, Contextual, Adaptive, Minimal cognitive load
+        ═══════════════════════════════════════════════════════════════════════════ */
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --bg-elevated: #22222e;
+            --text-primary: #e8e8ed;
+            --text-secondary: #9898a8;
+            --text-muted: #68687a;
+            --accent-cyan: #00d9ff;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffd000;
+            --accent-red: #ff4444;
+            --accent-purple: #aa88ff;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-active: rgba(0, 217, 255, 0.3);
+            --glow-cyan: 0 0 20px rgba(0, 217, 255, 0.3);
+            --font-mono: 'SF Mono', 'Fira Code', monospace;
+            --font-sans: 'Inter', -apple-system, sans-serif;
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --transition-fast: 150ms ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .cockpit {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: var(--space-md) var(--space-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text h1 { font-size: 18px; font-weight: 600; }
+        .logo-text span { font-size: 12px; color: var(--text-muted); }
+
+        .btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .btn:hover {
+            background: var(--bg-elevated);
+            border-color: var(--border-active);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            border-color: var(--accent-cyan);
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 1px;
+            background: var(--border-subtle);
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-md);
+        }
+
+        /* Tree View */
+        .tree { font-family: var(--font-mono); font-size: 13px; }
+        .tree-node { margin-left: var(--space-md); }
+        .tree-root > .tree-node { margin-left: 0; }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            gap: var(--space-sm);
+        }
+
+        .tree-item:hover { background: var(--bg-tertiary); }
+
+        .tree-toggle {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: transform var(--transition-fast);
+        }
+
+        .tree-toggle.expanded { transform: rotate(90deg); }
+
+        .tree-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .tree-icon.system { background: var(--accent-purple); }
+        .tree-icon.strategic { background: var(--accent-cyan); }
+        .tree-icon.tactical { background: var(--accent-green); }
+        .tree-icon.operational { background: var(--accent-yellow); }
+
+        .tree-label { flex: 1; color: var(--text-primary); }
+
+        .tree-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .tree-children { overflow: hidden; transition: max-height 250ms ease; }
+        .tree-children.collapsed { max-height: 0; }
+
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .metric-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: var(--space-lg);
+            text-align: center;
+            transition: var(--transition-fast);
+        }
+
+        .metric-card:hover {
+            border-color: var(--border-active);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: var(--space-xs);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-trend {
+            font-size: 11px;
+            margin-top: var(--space-sm);
+            color: var(--accent-green);
+        }
+
+        /* Timeline */
+        .timeline { position: relative; padding-left: var(--space-lg); }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple), transparent);
+        }
+
+        .timeline-item { position: relative; padding-bottom: var(--space-lg); }
+
+        .timeline-dot {
+            position: absolute;
+            left: -20px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            border: 2px solid var(--accent-cyan);
+        }
+
+        .timeline-item.shape-shift .timeline-dot {
+            background: var(--accent-yellow);
+            border-color: var(--accent-yellow);
+            box-shadow: 0 0 10px var(--accent-yellow);
+        }
+
+        .timeline-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+        .timeline-agent { font-size: 12px; color: var(--accent-cyan); margin-top: var(--space-xs); }
+        .timeline-truth { font-size: 13px; color: var(--text-primary); margin-top: var(--space-xs); }
+
+        /* Activity */
+        .activity-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-sm);
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .activity-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .activity-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+            border-radius: 3px;
+        }
+
+        .activity-count {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-muted);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* Rounds */
+        .rounds-display {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: var(--space-lg);
+            text-align: center;
+            margin-top: var(--space-lg);
+        }
+
+        .rounds-number {
+            font-size: 48px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+            text-shadow: var(--glow-cyan);
+        }
+
+        .rounds-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .rounds-progress {
+            height: 4px;
+            background: var(--bg-primary);
+            border-radius: 2px;
+            margin-top: var(--space-md);
+            overflow: hidden;
+        }
+
+        .rounds-progress-fill {
+            height: 100%;
+            background: var(--accent-cyan);
+        }
+
+        .footer {
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-subtle);
+            padding: var(--space-sm) var(--space-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            margin-right: var(--space-xs);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 1200px) {
+            .main { grid-template-columns: 1fr; }
+        }
+
+        .section-title {
+            margin: 24px 0 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="cockpit">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">◇</div>
+                <div class="logo-text">
+                    <h1>Meta-Observability Cockpit</h1>
+                    <span>I → C → O | Truth Evolution Tracker</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn" id="refreshBtn">⟳ Refresh</button>
+                <button class="btn btn-primary" id="reportBtn">⚡ Force Report</button>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Agent Hierarchy</span>
+                    <button class="btn" id="expandBtn">⊞</button>
+                </div>
+                <div class="panel-content">
+                    <div class="tree tree-root" id="agentTree"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Truth Evolution Dashboard</span>
+                </div>
+                <div class="panel-content">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value" id="totalTruths">--</div>
+                            <div class="metric-label">Total Truths</div>
+                            <div class="metric-trend" id="truthsTrend">↑ --/day</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="shapeShifts">--</div>
+                            <div class="metric-label">Shape Shifts</div>
+                            <div class="metric-trend">Paradigm Changes</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="currentRound">--</div>
+                            <div class="metric-label">Current Round</div>
+                            <div class="metric-trend" id="roundsTrend">-- until report</div>
+                        </div>
+                    </div>
+
+                    <div class="rounds-display">
+                        <div class="rounds-label">Dynamic Round</div>
+                        <div class="rounds-number" id="roundNumber">0</div>
+                        <div style="margin-top: 12px; font-size: 12px; color: var(--text-secondary);" id="nextReport">Next report at round --</div>
+                        <div class="rounds-progress">
+                            <div class="rounds-progress-fill" id="roundProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title">Recent Truths</h3>
+                    <div class="timeline" id="timeline"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Agent Activity</span>
+                </div>
+                <div class="panel-content">
+                    <div class="activity-list" id="activityList"></div>
+                    <h3 class="section-title">System Info</h3>
+                    <div id="systemInfo" style="font-size: 12px; color: var(--text-muted);"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div><span class="status-dot"></span>System Active | 逆水行舟，不进则退</div>
+            <div id="lastUpdate">Last updated: --</div>
+        </footer>
+    </div>
+
+    <script>
+        // Safe DOM creation utilities
+        function createElement(tag, attrs = {}, children = []) {
+            const el = document.createElement(tag);
+            for (const [key, value] of Object.entries(attrs)) {
+                if (key === 'className') el.className = value;
+                else if (key === 'textContent') el.textContent = value;
+                else if (key === 'style' && typeof value === 'object') {
+                    Object.assign(el.style, value);
+                } else if (key.startsWith('on')) {
+                    el.addEventListener(key.slice(2).toLowerCase(), value);
+                } else el.setAttribute(key, value);
+            }
+            children.forEach(child => {
+                if (typeof child === 'string') el.appendChild(document.createTextNode(child));
+                else if (child) el.appendChild(child);
+            });
+            return el;
+        }
+
+        const AGENTS = {
+            system: { label: 'SYSTEM', icon: 'system', children: {
+                strategic: { label: 'Strategic Layer', icon: 'strategic', children: {
+                    'business-strategy': { label: 'business_strategy', icon: 'strategic' },
+                    'cto-agent': { label: 'cto_agent', icon: 'strategic' },
+                    'agentic-devops': { label: 'agentic_devops_strategy', icon: 'strategic' }
+                }},
+                tactical: { label: 'Tactical Layer', icon: 'tactical', children: {
+                    orchestrator: { label: 'orchestrator', icon: 'tactical' },
+                    librarian: { label: 'librarian', icon: 'tactical' }
+                }},
+                operational: { label: 'Operational Layer', icon: 'operational', children: {
+                    'code-implementer': { label: 'code_implementer', icon: 'operational' },
+                    'compliance-auditor': { label: 'compliance_auditor', icon: 'operational' }
+                }}
+            }}
+        };
+
+        let metricsData = null;
+        let roundsData = null;
+
+        function renderTree(node, parent, prefix = '') {
+            for (const [key, value] of Object.entries(node)) {
+                const id = prefix ? prefix + '-' + key : key;
+                const hasChildren = value.children && Object.keys(value.children).length > 0;
+                const activity = metricsData?.by_agent?.[key] || 0;
+
+                const nodeEl = createElement('div', { className: 'tree-node', 'data-id': id });
+
+                const itemEl = createElement('div', { className: 'tree-item' });
+
+                if (hasChildren) {
+                    const toggle = createElement('span', { className: 'tree-toggle expanded', id: 'toggle-' + id, textContent: '▶' });
+                    itemEl.appendChild(toggle);
+                } else {
+                    itemEl.appendChild(createElement('span', { style: { width: '16px' } }));
+                }
+
+                const icon = createElement('span', { className: 'tree-icon ' + value.icon, textContent: '◆' });
+                const label = createElement('span', { className: 'tree-label', textContent: value.label });
+                itemEl.appendChild(icon);
+                itemEl.appendChild(label);
+
+                if (activity > 0) {
+                    const badge = createElement('span', { className: 'tree-badge', textContent: String(activity) });
+                    itemEl.appendChild(badge);
+                }
+
+                itemEl.onclick = () => {
+                    const t = document.getElementById('toggle-' + id);
+                    const c = document.getElementById('children-' + id);
+                    if (t && c) {
+                        t.classList.toggle('expanded');
+                        c.classList.toggle('collapsed');
+                    }
+                };
+
+                nodeEl.appendChild(itemEl);
+
+                if (hasChildren) {
+                    const childrenEl = createElement('div', { className: 'tree-children', id: 'children-' + id });
+                    renderTree(value.children, childrenEl, id);
+                    nodeEl.appendChild(childrenEl);
+                }
+
+                parent.appendChild(nodeEl);
+            }
+        }
+
+        function renderActivity(data) {
+            const list = document.getElementById('activityList');
+            list.replaceChildren();
+            if (!data?.by_agent) return;
+
+            const max = Math.max(...Object.values(data.by_agent));
+            for (const [agent, count] of Object.entries(data.by_agent)) {
+                const pct = (count / max) * 100;
+                const item = createElement('div', { className: 'activity-item' }, [
+                    createElement('span', { style: { width: '120px', fontSize: '12px' }, textContent: agent }),
+                    createElement('div', { className: 'activity-bar' }, [
+                        createElement('div', { className: 'activity-bar-fill', style: { width: pct + '%' } })
+                    ]),
+                    createElement('span', { className: 'activity-count', textContent: String(count) })
+                ]);
+                list.appendChild(item);
+            }
+        }
+
+        function renderTimeline() {
+            const timeline = document.getElementById('timeline');
+            timeline.replaceChildren();
+
+            const items = [
+                { time: '17:00', agent: 'system', truth: 'What can be observed can be improved.', shift: false },
+                { time: '16:00', agent: 'system', truth: 'The meta-skill that indexes all skills is the foundation.', shift: false },
+                { time: '13:00', agent: 'system', truth: 'Claude Code hooks inject context but cannot invoke Claude.', shift: true },
+                { time: '12:00', agent: 'system', truth: 'Always start with remembrance. Wisdom precedes action.', shift: true }
+            ];
+
+            items.forEach(item => {
+                const el = createElement('div', { className: 'timeline-item' + (item.shift ? ' shape-shift' : '') }, [
+                    createElement('div', { className: 'timeline-dot' }),
+                    createElement('div', { className: 'timeline-time', textContent: item.time }),
+                    createElement('div', { className: 'timeline-agent', textContent: item.agent }),
+                    createElement('div', { className: 'timeline-truth', textContent: item.truth })
+                ]);
+                timeline.appendChild(el);
+            });
+        }
+
+        async function loadData() {
+            try {
+                const r = await fetch('../snapshots/2026-02-07.json');
+                metricsData = await r.json();
+            } catch {
+                metricsData = { total_truths: 23, shape_shifts: 2, growth_rate_per_day: 11.5, by_agent: { system: 13, orchestrator: 3 } };
+            }
+
+            try {
+                const r = await fetch('../rounds.json');
+                roundsData = await r.json();
+            } catch {
+                roundsData = { current_round: 10, report_frequency: 10 };
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('totalTruths').textContent = metricsData?.total_truths || '--';
+            document.getElementById('shapeShifts').textContent = metricsData?.shape_shifts || '--';
+            document.getElementById('truthsTrend').textContent = '↑ ' + (metricsData?.growth_rate_per_day || 0) + '/day';
+
+            const cur = roundsData?.current_round || 0;
+            const freq = roundsData?.report_frequency || 10;
+            const next = Math.ceil(cur / freq) * freq || freq;
+            const prog = ((cur % freq) / freq) * 100;
+
+            document.getElementById('currentRound').textContent = cur;
+            document.getElementById('roundNumber').textContent = cur;
+            document.getElementById('roundsTrend').textContent = (next - cur) + ' until report';
+            document.getElementById('nextReport').textContent = 'Next report at round ' + next;
+            document.getElementById('roundProgress').style.width = prog + '%';
+
+            const tree = document.getElementById('agentTree');
+            tree.replaceChildren();
+            renderTree(AGENTS, tree);
+
+            renderActivity(metricsData);
+            renderTimeline();
+
+            document.getElementById('lastUpdate').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+        }
+
+        document.getElementById('refreshBtn').onclick = loadData;
+        document.getElementById('reportBtn').onclick = () => alert('Run: bash scripts/dynamic-rounds.sh report');
+        document.getElementById('expandBtn').onclick = () => {
+            document.querySelectorAll('.tree-toggle').forEach(el => el.classList.add('expanded'));
+            document.querySelectorAll('.tree-children').forEach(el => el.classList.remove('collapsed'));
+        };
+
+        loadData();
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
