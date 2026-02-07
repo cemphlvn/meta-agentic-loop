@@ -61,11 +61,22 @@
       "scoped-remembrance",
       "essence-scrum",
       "process-workflows",
-      "agent-methodology"
+      "agent-methodology",
+      "playground"
     ],
     "hooks": {
-      "SessionStart": "Load scoped remembrance and state",
-      "Stop": "Persist session learnings"
+      "SessionStart": "Load scoped remembrance, state, and playground context",
+      "Stop": "Persist session learnings and metrics"
+    },
+    "playground": {
+      "description": "Higher-order observability interface",
+      "commands": [
+        "/playground - Full dashboard",
+        "/playground gantt - Roadmap view",
+        "/playground evolution - Self-improvement log",
+        "/playground metrics - Agent activity",
+        "/playground hidden - Behind-the-scenes events"
+      ]
     }
   },
   "philosophy": {

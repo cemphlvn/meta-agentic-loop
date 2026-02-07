@@ -8,6 +8,12 @@
           "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh",
           "timeout": 10,
           "description": "Load state and scoped remembrance"
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/skills/playground/scripts/playground-context.sh",
+          "timeout": 5,
+          "description": "Inject playground higher-order context"
         }
       ]
     }
