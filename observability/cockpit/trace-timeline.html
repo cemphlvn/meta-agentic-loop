@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trace Timeline | Self-Simulation Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --bg-elevated: #22222e;
+            --text-primary: #e8e8ed;
+            --text-secondary: #9898a8;
+            --text-muted: #68687a;
+            --accent-cyan: #00d9ff;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffd000;
+            --accent-red: #ff4444;
+            --accent-purple: #aa88ff;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --font-mono: 'SF Mono', 'Fira Code', monospace;
+            --font-sans: 'Inter', -apple-system, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .btn:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 320px;
+            gap: 16px;
+            height: calc(100vh - 100px);
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .panel-content {
+            padding: 16px;
+            overflow-y: auto;
+            max-height: calc(100% - 50px);
+        }
+
+        .scenario-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 150ms ease;
+            background: var(--bg-tertiary);
+        }
+
+        .scenario-item:hover { background: var(--bg-elevated); }
+        .scenario-item.active { border-left: 3px solid var(--accent-cyan); }
+        .scenario-name { font-size: 13px; margin-bottom: 4px; }
+
+        .scenario-status {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .scenario-status.passed { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); }
+        .scenario-status.failed { background: rgba(255, 68, 68, 0.2); color: var(--accent-red); }
+        .scenario-status.pending { background: rgba(255, 208, 0, 0.2); color: var(--accent-yellow); }
+
+        .timeline { position: relative; padding-left: 40px; }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple), transparent);
+        }
+
+        .timeline-event {
+            position: relative;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .timeline-event::before {
+            content: '';
+            position: absolute;
+            left: -30px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            border: 2px solid var(--bg-primary);
+        }
+
+        .timeline-event.message::before { background: var(--accent-green); }
+        .timeline-event.routing::before { background: var(--accent-purple); }
+        .timeline-event.tool::before { background: var(--accent-yellow); }
+        .timeline-event.escalation::before { background: var(--accent-red); }
+
+        .event-time { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+        .event-type { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 4px 0; }
+        .event-type.message { color: var(--accent-green); }
+        .event-type.routing { color: var(--accent-purple); }
+        .event-type.tool { color: var(--accent-yellow); }
+        .event-type.escalation { color: var(--accent-red); }
+        .event-desc { font-size: 13px; color: var(--text-primary); }
+
+        .verdict-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .verdict-score {
+            font-size: 36px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .verdict-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+
+        .dimension {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .dimension-name { font-size: 11px; color: var(--text-secondary); min-width: 100px; }
+
+        .dimension-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            margin: 0 12px;
+            overflow: hidden;
+        }
+
+        .dimension-fill { height: 100%; border-radius: 3px; }
+        .dimension-fill.high { background: var(--accent-green); }
+        .dimension-fill.mid { background: var(--accent-yellow); }
+        .dimension-fill.low { background: var(--accent-red); }
+
+        .dimension-value { font-family: var(--font-mono); font-size: 11px; min-width: 30px; }
+
+        .recommendation {
+            text-align: center;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .recommendation.SHIP { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); }
+        .recommendation.IMPROVE { background: rgba(255, 208, 0, 0.2); color: var(--accent-yellow); }
+        .recommendation.BLOCK { background: rgba(255, 68, 68, 0.2); color: var(--accent-red); }
+
+        .integration-check { display: flex; align-items: center; gap: 8px; padding: 8px; font-size: 12px; }
+        .check-status { width: 8px; height: 8px; border-radius: 50%; }
+        .check-status.pass { background: var(--accent-green); }
+        .check-status.fail { background: var(--accent-red); }
+        .check-status.warn { background: var(--accent-yellow); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Trace Timeline | Self-Simulation</h1>
+        <div>
+            <button class="btn" id="runAll">Run All Scenarios</button>
+            <button class="btn" id="judgeAll">Judge All</button>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="panel">
+            <div class="panel-header">Scenarios</div>
+            <div class="panel-content" id="scenarioList"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">Trace Timeline</div>
+            <div class="panel-content">
+                <div class="timeline" id="timeline"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">Judge Verdict</div>
+            <div class="panel-content">
+                <div class="verdict-card">
+                    <div class="verdict-score" id="overallScore">--</div>
+                    <div class="verdict-label">Overall Score</div>
+                </div>
+
+                <div class="verdict-card">
+                    <div id="dimensions"></div>
+                </div>
+
+                <div class="recommendation" id="recommendation">PENDING</div>
+
+                <div class="verdict-card" style="margin-top: 16px;">
+                    <div class="verdict-label" style="margin-bottom: 8px;">Integration Checks</div>
+                    <div id="integrationChecks"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Safe DOM utilities
+        function createElement(tag, className, textContent) {
+            const el = document.createElement(tag);
+            if (className) el.className = className;
+            if (textContent) el.textContent = textContent;
+            return el;
+        }
+
+        function appendChildren(parent, children) {
+            children.forEach(child => parent.appendChild(child));
+        }
+
+        // Data
+        const scenarios = [
+            { id: 'SCENE-001', name: 'Order Status Inquiry', status: 'passed', score: 92 },
+            { id: 'SCENE-002', name: 'Order Modification', status: 'passed', score: 88 },
+            { id: 'SCENE-003', name: 'Subscription Cancel', status: 'passed', score: 95 },
+            { id: 'SCENE-004', name: 'Subscription Pause', status: 'pending', score: null },
+            { id: 'SCENE-005', name: 'Refund Request', status: 'passed', score: 85 },
+            { id: 'SCENE-006', name: 'Human Request', status: 'passed', score: 100 },
+            { id: 'SCENE-007', name: 'Frustrated Customer', status: 'passed', score: 78 },
+            { id: 'SCENE-008', name: 'Legal Issue', status: 'passed', score: 100 },
+            { id: 'EDGE-001', name: 'Empty Message', status: 'failed', score: 45 },
+            { id: 'EDGE-002', name: 'Non-English', status: 'pending', score: null }
+        ];
+
+        const sampleTimeline = [
+            { time: '00:00', type: 'message', desc: 'Customer: "Hi, I placed an order last week..."' },
+            { time: '00:05', type: 'routing', desc: 'Routed to order-agent (confidence: 0.94)' },
+            { time: '00:12', type: 'tool', desc: 'Tool: get_order - Success' },
+            { time: '00:18', type: 'tool', desc: 'Tool: get_tracking - Success' },
+            { time: '00:25', type: 'message', desc: 'Agent: "Your order is in transit..."' }
+        ];
+
+        const verdict = {
+            score: 87,
+            dimensions: { accuracy: 92, efficiency: 85, appropriateness: 88, escalationHandling: 83 },
+            recommendation: 'SHIP'
+        };
+
+        const integrationChecks = [
+            { name: 'Tracer Singleton', status: 'pass' },
+            { name: 'Memory Store', status: 'pass' },
+            { name: 'Simulation Engine', status: 'pass' },
+            { name: 'Agent Executors', status: 'pass' },
+            { name: 'Tool Definitions', status: 'pass' }
+        ];
+
+        // Render scenarios
+        const scenarioList = document.getElementById('scenarioList');
+        scenarios.forEach((s, i) => {
+            const item = createElement('div', 'scenario-item' + (i === 0 ? ' active' : ''));
+
+            const name = createElement('div', 'scenario-name', s.name);
+            const status = createElement('span', 'scenario-status ' + s.status, s.status);
+
+            item.appendChild(name);
+            item.appendChild(status);
+
+            if (s.score !== null) {
+                const scoreEl = createElement('span', null, String(s.score));
+                scoreEl.style.cssText = 'float:right;font-family:var(--font-mono);font-size:11px;color:var(--text-muted)';
+                item.appendChild(scoreEl);
+            }
+
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.scenario-item').forEach(e => e.classList.remove('active'));
+                item.classList.add('active');
+            });
+
+            scenarioList.appendChild(item);
+        });
+
+        // Render timeline
+        const timeline = document.getElementById('timeline');
+        sampleTimeline.forEach(e => {
+            const event = createElement('div', 'timeline-event ' + e.type);
+
+            const time = createElement('div', 'event-time', e.time);
+            const type = createElement('div', 'event-type ' + e.type, e.type);
+            const desc = createElement('div', 'event-desc', e.desc);
+
+            appendChildren(event, [time, type, desc]);
+            timeline.appendChild(event);
+        });
+
+        // Render verdict
+        document.getElementById('overallScore').textContent = verdict.score;
+        const recEl = document.getElementById('recommendation');
+        recEl.textContent = verdict.recommendation;
+        recEl.className = 'recommendation ' + verdict.recommendation;
+
+        // Render dimensions
+        const dimensionsEl = document.getElementById('dimensions');
+        Object.entries(verdict.dimensions).forEach(([name, value]) => {
+            const level = value >= 80 ? 'high' : value >= 60 ? 'mid' : 'low';
+
+            const dim = createElement('div', 'dimension');
+
+            const nameEl = createElement('span', 'dimension-name', name);
+
+            const barContainer = createElement('div', 'dimension-bar');
+            const barFill = createElement('div', 'dimension-fill ' + level);
+            barFill.style.width = value + '%';
+            barContainer.appendChild(barFill);
+
+            const valueEl = createElement('span', 'dimension-value', String(value));
+
+            appendChildren(dim, [nameEl, barContainer, valueEl]);
+            dimensionsEl.appendChild(dim);
+        });
+
+        // Render integration checks
+        const checksEl = document.getElementById('integrationChecks');
+        integrationChecks.forEach(c => {
+            const check = createElement('div', 'integration-check');
+
+            const status = createElement('div', 'check-status ' + c.status);
+            const name = createElement('span', null, c.name);
+
+            appendChildren(check, [status, name]);
+            checksEl.appendChild(check);
+        });
+
+        // Button handlers
+        document.getElementById('runAll').addEventListener('click', () => {
+            alert('Running all scenarios... (Would call API: POST /api/simulate/run-all)');
+        });
+        document.getElementById('judgeAll').addEventListener('click', () => {
+            alert('Judging all scenarios... (Would call API: POST /api/judge/consensus)');
+        });
+    </script>
+</body>
+</html>
