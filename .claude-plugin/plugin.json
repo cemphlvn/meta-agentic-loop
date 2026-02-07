@@ -62,7 +62,8 @@
       "essence-scrum",
       "process-workflows",
       "agent-methodology",
-      "playground"
+      "playground",
+      "advanced-techniques"
     ],
     "hooks": {
       "SessionStart": "Load scoped remembrance, state, and playground context",
