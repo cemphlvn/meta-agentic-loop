@@ -1,0 +1,41 @@
+# Hypothesis HYP-001 — First System Hypothesis
+---
+id: HYP-001
+created: 2026-02-07T02:15:00Z
+agent: system-scientist
+status: testing
+
+hypothesis:
+  statement: "Agent invocation frequency correlates with truth contribution rate"
+  rationale: |
+    Agents that are invoked more frequently have more opportunities
+    to observe, reason, and crystallize truths. If this correlation
+    is strong (>0.8), dispatching more subagents should directly
+    increase the system's learning rate.
+
+expected_outcome:
+  metric: "correlation(agent_invocations, agent_truths)"
+  threshold: "> 0.8"
+
+test_protocol:
+  method: "correlation"
+  data_source: ".remembrance agent and truth counts"
+  interval: "daily"
+  duration: "7 days"
+  formula: "pearson_correlation(invocations[], truths[])"
+
+observations:
+  - date: 2026-02-07
+    data:
+      system: { invocations: 17, truths: 17 }
+      orchestrator: { invocations: 3, truths: 3 }
+      cto-agent: { invocations: 2, truths: 2 }
+      librarian: { invocations: 1, truths: 1 }
+      compliance-auditor: { invocations: 1, truths: 1 }
+      code-implementer: { invocations: 1, truths: 1 }
+    correlation: 1.0
+    notes: "Perfect correlation on day 1 — each invocation produced exactly 1 truth"
+
+conclusion: null
+implementation: null
+---

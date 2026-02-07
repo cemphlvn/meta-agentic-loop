@@ -1,0 +1,41 @@
+# Hypothesis HYP-002 — Validation Coverage Correlation
+---
+id: HYP-002
+created: 2026-02-07T22:00:00Z
+agent: system-scientist
+status: proposed
+
+hypothesis:
+  statement: "Higher validation certainty levels correlate with fewer runtime issues"
+  rationale: |
+    Research revealed 5 certainty levels in validation:
+    1. Existence (absolute)
+    2. Syntax (high)
+    3. Semantics (moderate)
+    4. Integration (low)
+    5. Purpose (lowest)
+
+    Current validators cover levels 1-2. If we add level 3-4 validators,
+    runtime issues should decrease proportionally.
+
+expected_outcome:
+  metric: "issues_detected_at_runtime / total_changes"
+  threshold: "< 0.1 (10% escape rate)"
+  baseline: "unknown - need measurement"
+
+test_protocol:
+  method: "before-after comparison"
+  data_source: ".audit/issues.log, remembrance errors"
+  phases:
+    - name: "baseline"
+      duration: "7 days"
+      validators: ["structure", "skills", "agents", "remembrance"]
+    - name: "enhanced"
+      duration: "7 days"
+      validators: ["+ semantic", "+ integration"]
+
+observations: []
+
+conclusion: null
+implementation: null
+---

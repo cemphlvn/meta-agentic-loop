@@ -47,6 +47,42 @@ get_date_counts() {
     grep 'timestamp:' "$REMEMBRANCE" 2>/dev/null | sed 's/.*timestamp:[[:space:]]*//' | cut -d'T' -f1 | sort | uniq -c || echo ""
 }
 
+# Calculate actual days from timestamp range (CTO fix: was hardcoded /2)
+get_actual_days() {
+    local dates
+    dates=$(grep 'timestamp:' "$REMEMBRANCE" 2>/dev/null | sed 's/.*timestamp:[[:space:]]*//' | cut -d'T' -f1 | sort -u)
+
+    if [ -z "$dates" ]; then
+        echo "1"
+        return
+    fi
+
+    local oldest newest
+    oldest=$(echo "$dates" | head -1)
+    newest=$(echo "$dates" | tail -1)
+
+    # Cross-platform date calculation (macOS + Linux)
+    local oldest_sec newest_sec days
+    if date --version >/dev/null 2>&1; then
+        # GNU date (Linux)
+        oldest_sec=$(date -d "$oldest" +%s 2>/dev/null || echo "0")
+        newest_sec=$(date -d "$newest" +%s 2>/dev/null || echo "0")
+    else
+        # BSD date (macOS)
+        oldest_sec=$(date -jf "%Y-%m-%d" "$oldest" +%s 2>/dev/null || echo "0")
+        newest_sec=$(date -jf "%Y-%m-%d" "$newest" +%s 2>/dev/null || echo "0")
+    fi
+
+    if [ "$oldest_sec" = "0" ] || [ "$newest_sec" = "0" ]; then
+        echo "1"
+        return
+    fi
+
+    days=$(( (newest_sec - oldest_sec) / 86400 + 1 ))
+    [ "$days" -lt 1 ] && days=1
+    echo "$days"
+}
+
 #───────────────────────────────────────────────────────────────────────────────
 # PHASE 2: Generate visual report
 #───────────────────────────────────────────────────────────────────────────────
@@ -60,8 +96,9 @@ generate_report() {
     agent_counts=$(get_agent_counts)
     local recent_truths
     recent_truths=$(get_recent_truths)
-    local growth
-    growth=$(echo "scale=1; ${total_truths} / 2" | bc 2>/dev/null || echo "N/A")
+    local actual_days growth
+    actual_days=$(get_actual_days)
+    growth=$(echo "scale=1; ${total_truths} / ${actual_days}" | bc 2>/dev/null || echo "N/A")
 
     # Print dashboard
     echo ""
@@ -157,7 +194,7 @@ generate_json() {
   "timestamp": "${TIMESTAMP}",
   "total_truths": ${total_truths},
   "shape_shifts": ${shape_shifts},
-  "growth_rate_per_day": $(echo "scale=2; ${total_truths} / 2" | bc 2>/dev/null || echo "0"),
+  "growth_rate_per_day": $(echo "scale=2; ${total_truths} / $(get_actual_days)" | bc 2>/dev/null || echo "0"),
   "by_agent": {
 $(echo -e "$agent_json")
   },

@@ -36,9 +36,21 @@
       "hooks": [
         {
           "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/ralph-stop-hook.sh",
+          "timeout": 5,
+          "description": "Ralph Wiggum: Block exit if loop active, feed prompt back"
+        },
+        {
+          "type": "command",
           "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-end.sh",
           "timeout": 10,
           "description": "Persist session learnings to scoped remembrance"
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/evaluate-session.sh",
+          "timeout": 15,
+          "description": "Meta-improvement: evaluate session, update loop state, check SCRUM"
         },
         {
           "type": "command",

@@ -1,0 +1,36 @@
+# Hypothesis HYP-004 — Meta-Improvement Recursion Depth
+---
+id: HYP-004
+created: 2026-02-07T22:00:00Z
+agent: system-scientist
+status: proposed
+
+hypothesis:
+  statement: "Improving the improvement system yields compounding returns"
+  rationale: |
+    The system that improves the system is a meta-level concern.
+    If we improve validation → we catch more issues → fewer bugs → faster iteration.
+    If we improve that improvement process → even faster.
+
+    This is "rowing upstream" - 不进则退 (no advance is to drop back).
+    The question: is there a recursion depth where returns diminish?
+
+expected_outcome:
+  metric: "time_to_value at each meta-level"
+  threshold: "diminishing returns at level 3+"
+
+test_protocol:
+  method: "recursive measurement"
+  levels:
+    1: "improve code" → measure velocity
+    2: "improve validators" → measure issue escape rate
+    3: "improve validator-improvement process" → measure validator quality
+    4: "improve meta-improvement" → measure at what depth returns diminish
+
+observations: []
+
+conclusion: null
+implementation: |
+  If validated: Focus investment at optimal recursion depth
+  If rejected: Meta-improvement always valuable, continue investing
+---

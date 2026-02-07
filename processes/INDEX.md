@@ -29,6 +29,12 @@
 - `strategy-review` - Business strategy alignment
 - `architecture-decision` - ADR creation process
 
+### Meta-Improvement (Deterministic)
+- `meta-improvement` - System self-improvement (Stop hook, CORE_LOOP aligned)
+  - Trigger: automatic on session end, or /process meta-improve
+  - Flow: OBSERVE → PHILOSOPHIZE → CRYSTALLIZE → PLAN → CONTINUE
+  - Output: .loop-state.yaml, .remembrance, SCRUM.md updates
+
 ## Process Definition Format
 
 ```yaml

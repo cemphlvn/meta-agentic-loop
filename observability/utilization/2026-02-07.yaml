@@ -1,0 +1,66 @@
+# Utilization Log — 2026-02-07
+---
+date: 2026-02-07
+period: daily
+generated: 2026-02-07T02:19:01Z
+
+agents:
+  system:
+    invocations: 18
+    truths: 24
+  orchestrator:
+    invocations: 3
+    truths: 10
+  cto-agent:
+    invocations: 2
+    truths: 3
+  librarian:
+    invocations: 1
+    truths: 5
+  compliance-auditor:
+    invocations: 1
+    truths: 1
+  code-implementer:
+    invocations: 1
+    truths: 1
+  <agent-id>           # Determines scope:
+    invocations: 1
+    truths: 4
+
+skills:
+  observe:
+    uses: 28
+    success_rate: 1.0
+  cockpit:
+    uses: 9
+    success_rate: 1.0
+  cei:
+    uses: 10
+    success_rate: 1.0
+  hypothesis:
+    uses: 5
+    success_rate: 1.0
+
+processes:
+  feature:
+    executions: 1
+  research:
+    executions: 1
+  audit:
+    executions: 1
+
+hooks:
+  SessionStart:
+    triggers: estimated
+    success_rate: 1.0
+  Stop:
+    triggers: estimated
+    success_rate: 1.0
+
+summary:
+  total_agent_invocations: 27
+  total_skill_uses: estimated
+  total_truths: 28
+  days_active: 2
+  utilization_rate: 0.85
+---

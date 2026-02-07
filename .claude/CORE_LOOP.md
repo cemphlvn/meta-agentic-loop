@@ -180,8 +180,20 @@ on_session_start:
 
 on_session_end:
   - APPEND: session learnings to .remembrance
-  - UPDATE: alpha states
+  - EVALUATE: run meta-improvement (hooks/scripts/evaluate-session.sh)
+  - PERSIST: update .loop-state.yaml with phase transition
+  - UPDATE: alpha states in SCRUM.md
   - PREPARE: next continuation point
+
+meta_improvement:
+  trigger: Stop hook (automatic)
+  process: plugin/processes/meta-improvement.md
+  phases: OBSERVE → DECIDE → ACT → LEARN (tracked in .loop-state.yaml)
+  output:
+    - .loop-state.yaml (continuation point)
+    - .remembrance (crystallized truths)
+    - SCRUM.md (alpha transitions)
+  principle: 不进则退 — deterministic forward, never ad-hoc
 
 continuation_logic:
   IF blockers exist:

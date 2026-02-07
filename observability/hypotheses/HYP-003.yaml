@@ -1,0 +1,34 @@
+# Hypothesis HYP-003 — Remembrance Consultation Frequency
+---
+id: HYP-003
+created: 2026-02-07T22:00:00Z
+agent: system-scientist
+status: proposed
+
+hypothesis:
+  statement: "Sessions that read .remembrance produce higher quality outputs"
+  rationale: |
+    The loop protocol states: "remind yourself to remind yourself"
+    .remembrance contains accumulated wisdom and shape_shifts.
+    Sessions that consult it should avoid past mistakes and
+    build on crystallized truths.
+
+expected_outcome:
+  metric: "quality_score(session_outputs) when remembrance_read vs not"
+  threshold: "> 20% improvement"
+
+test_protocol:
+  method: "A/B comparison"
+  data_source:
+    - ".observability/remembrance-tracker.json"
+    - "session outputs quality ratings"
+  measurement:
+    - "shape_shifts produced"
+    - "errors avoided (present in remembrance)"
+    - "build on existing truths"
+
+observations: []
+
+conclusion: null
+implementation: null
+---
