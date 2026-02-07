@@ -1,5 +1,6 @@
 ---
 name: Shift Felt
+description: Trigger SHIFT_FELT protocol to re-read accumulated wisdom
 trigger: When context changes significantly or user explicitly triggers reflection
 commands:
   - /shift

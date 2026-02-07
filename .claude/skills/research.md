@@ -1,5 +1,6 @@
 ---
 name: Research
+description: Deep ontological and epistemological brand research
 trigger: When user wants to investigate a brand, understand its essence, validate claims, or run /research
 commands:
   - /research

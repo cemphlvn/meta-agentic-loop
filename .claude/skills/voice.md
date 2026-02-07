@@ -1,5 +1,6 @@
 ---
 name: Voice Adjustment
+description: Fine-tune brand voice parameters and style
 trigger: When user wants to change brand voice, tone, or communication style
 commands:
   - /voice

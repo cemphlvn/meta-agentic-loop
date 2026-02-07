@@ -1,5 +1,6 @@
 ---
 name: Campaign Management
+description: Create and manage marketing campaigns, projects, and video content
 trigger: When user wants to create campaigns, projects, or generate videos
 commands:
   - /campaign create
