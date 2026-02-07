@@ -20,6 +20,12 @@
           "command": "cat ${CLAUDE_PLUGIN_ROOT}/skills/advanced-techniques/SKILL.md",
           "timeout": 5,
           "description": "Auto-load advanced techniques index"
+        },
+        {
+          "type": "command",
+          "command": "echo '--- WHEREDUE Summary ---' && grep -A2 'status: pending' ${CLAUDE_PROJECT_DIR}/.claude/WHEREDUE.md 2>/dev/null | head -20 || echo 'No pending integrations'",
+          "timeout": 3,
+          "description": "Show pending integrations from WHEREDUE"
         }
       ]
     }
