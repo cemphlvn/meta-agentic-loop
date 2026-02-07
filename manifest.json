@@ -1,0 +1,30 @@
+{
+  "name": "meta-agentic-loop",
+  "version": "0.2.0",
+  "description": "Self-improving agentic loop with non-stopping runs, observability, and meta-improvement",
+  "author": {
+    "name": "cemphlvn",
+    "url": "https://github.com/cemphlvn"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cemphlvn/meta-agentic-loop.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "agentic",
+    "loop",
+    "meta-improvement",
+    "observability",
+    "ralph-wiggum"
+  ],
+  "commands": [
+    "./commands"
+  ],
+  "skills": [
+    "./skills"
+  ],
+  "hooks": "./hooks/hooks.json",
+  "agents": "./agents"
+}
