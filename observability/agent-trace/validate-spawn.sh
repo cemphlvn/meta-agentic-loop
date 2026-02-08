@@ -24,11 +24,26 @@ SPAWNER="${CLAUDE_AGENT_ID:-orchestrator}"
 
 # OTel identifiers
 # trace_id: 32 hex chars (128-bit) - shared across session
-TRACE_ID="${CLAUDE_TRACE_ID:-$(openssl rand -hex 16)}"
+# Check env var first, then file, then generate new
+if [[ -n "${CLAUDE_TRACE_ID:-}" ]]; then
+    TRACE_ID="$CLAUDE_TRACE_ID"
+elif [[ -f /tmp/claude_spans/trace_id ]]; then
+    TRACE_ID=$(cat /tmp/claude_spans/trace_id)
+else
+    TRACE_ID=$(openssl rand -hex 16)
+fi
+
 # span_id: 16 hex chars (64-bit) - unique per agent run
 SPAN_ID=$(openssl rand -hex 8)
-# parent_span_id: spawner's span_id (null for root)
-PARENT_SPAN_ID="${AGENT_SPAN_ID:-}"
+
+# parent_span_id: spawner's span_id (from env, file, or null for root)
+if [[ -n "${AGENT_SPAN_ID:-}" ]]; then
+    PARENT_SPAN_ID="$AGENT_SPAN_ID"
+elif [[ -f /tmp/claude_spans/last_span ]]; then
+    PARENT_SPAN_ID=$(cat /tmp/claude_spans/last_span)
+else
+    PARENT_SPAN_ID=""
+fi
 
 # Colors
 RED='\033[0;31m'
@@ -142,6 +157,13 @@ attributes:
   validation.status: "$validation_status"
 ---
 EOF
+
+    # Write span context to file for PostToolUse hook (env vars don't persist across hooks)
+    mkdir -p /tmp/claude_spans
+    echo "$SPAN_ID" > /tmp/claude_spans/last_span
+    echo "$TRACE_ID" > /tmp/claude_spans/trace_id
+    # Stack for nested agents
+    echo "$SPAN_ID" >> /tmp/claude_spans/span_stack
 
     # Emit agent:spawn event to WebSocket queue
     local event_payload=$(cat << PAYLOAD

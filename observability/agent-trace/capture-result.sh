@@ -19,6 +19,20 @@ SPAN_ID="${1:-}"
 STATUS="${2:-unknown}"  # success | failure | timeout | unknown
 RESULT_SUMMARY="${3:-No summary provided}"
 
+# If no span_id provided, read from file (written by PreToolUse hook)
+if [[ -z "$SPAN_ID" || "$SPAN_ID" == "unknown" ]]; then
+    if [[ -f /tmp/claude_spans/last_span ]]; then
+        SPAN_ID=$(cat /tmp/claude_spans/last_span)
+        # Pop from stack for nested agents
+        if [[ -f /tmp/claude_spans/span_stack ]]; then
+            head -n -1 /tmp/claude_spans/span_stack > /tmp/claude_spans/span_stack.tmp 2>/dev/null || true
+            mv /tmp/claude_spans/span_stack.tmp /tmp/claude_spans/span_stack 2>/dev/null || true
+            # Update last_span to previous in stack
+            tail -1 /tmp/claude_spans/span_stack > /tmp/claude_spans/last_span 2>/dev/null || true
+        fi
+    fi
+fi
+
 # Map status to OTel StatusCode
 case "$STATUS" in
     success) OTEL_STATUS="OK" ;;
@@ -27,8 +41,8 @@ case "$STATUS" in
 esac
 
 if [[ -z "$SPAN_ID" ]]; then
-    echo "ERROR: No span_id provided"
-    exit 1
+    echo "WARN: No span_id available (not passed and no file)"
+    exit 0
 fi
 
 PENDING_FILE="$TRACE_DIR/pending/$SPAN_ID.yaml"
