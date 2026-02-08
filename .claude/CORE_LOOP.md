@@ -136,13 +136,35 @@ while (true) {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                      .remembrance INTEGRATION                            │
+│                      DUAL REMEMBRANCE ARCHITECTURE                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  TWO FILES, DISTINCT SCOPES:                                             │
+│                                                                          │
+│  {ROOT}/.remembrance              # ECOSYSTEM SCOPE                      │
+│    → Domain learnings (kidlearnio, logic-sticks, etc.)                  │
+│    → Architecture patterns (enforcement, workspace, co-building)         │
+│    → Machinistic intelligence patterns                                   │
+│    → Format: timestamp, agent, context, truth, confidence                │
+│                                                                          │
+│  {ROOT}/plugin/.remembrance       # LOOP/INFRASTRUCTURE SCOPE           │
+│    → Hook behavior discoveries                                           │
+│    → Claude Code integration patterns                                    │
+│    → Plugin architecture insights                                        │
+│    → Format: Senior Form v2 (scope, ticket, observed, reasoning, etc.)   │
+│                                                                          │
+│  DECISION RULE:                                                          │
+│    HOW the agent system works → plugin/.remembrance                      │
+│    WHAT we're building → /.remembrance                                   │
+│                                                                          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  ON SHIFT_FELT:                                                          │
-│    1. READ .remembrance                                                  │
-│    2. INTEGRATE accumulated wisdom                                       │
-│    3. CONTINUE loop with enriched prior                                  │
+│    1. IDENTIFY scope: ecosystem OR loop?                                 │
+│    2. APPEND truth to correct .remembrance                               │
+│    3. READ both remembrance files                                        │
+│    4. INTEGRATE accumulated wisdom                                       │
+│    5. CONTINUE loop with enriched prior                                  │
 │                                                                          │
 │  TRIGGERS:                                                               │
 │    - Context switch (new domain entered)                                 │
@@ -150,16 +172,11 @@ while (true) {
 │    - Deep recursion (>3 levels of self-reference)                        │
 │    - Reflection interval (every N iterations)                            │
 │    - Error encountered (agent failure)                                   │
+│    - Pattern repeated 3+ times → crystallize                            │
 │                                                                          │
-│  FORMAT:                                                                 │
-│    ---                                                                   │
-│    timestamp: ISO-8601                                                   │
-│    agent: {invoking agent}                                               │
-│    context: {what triggered}                                             │
-│    truth: {the realized truth}                                           │
-│    reflection: {why this matters}                                        │
-│    confidence: 0.0-1.0                                                   │
-│    ---                                                                   │
+│  LOGGING THRESHOLD:                                                      │
+│    ✓ LOG IF: generalizable, transferable, would help future sessions    │
+│    ✗ SKIP IF: one-off detail, already documented, not transferable      │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -172,14 +189,17 @@ CLAUDE.md reads this file and continues itself:
 
 ```yaml
 on_session_start:
-  - READ: /.claude/CORE_LOOP.md
-  - READ: /.remembrance
-  - PARSE: alpha states from /scrum/SCRUM.md
+  - READ: {ROOT}/plugin/.claude/CORE_LOOP.md       # Loop philosophy
+  - READ: {ROOT}/.remembrance                       # Ecosystem wisdom
+  - READ: {ROOT}/plugin/.remembrance                # Loop wisdom
+  - PARSE: alpha states from {ROOT}/scrum/SCRUM.md
   - DETERMINE: where we were
   - CONTINUE: from that point forward
 
 on_session_end:
-  - APPEND: session learnings to .remembrance
+  - IDENTIFY: which scope does learning belong to?
+  - APPEND: ecosystem learnings → {ROOT}/.remembrance
+  - APPEND: loop learnings → {ROOT}/plugin/.remembrance
   - EVALUATE: run meta-improvement (hooks/scripts/evaluate-session.sh)
   - PERSIST: update .loop-state.yaml with phase transition
   - UPDATE: alpha states in SCRUM.md

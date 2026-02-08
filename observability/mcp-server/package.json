@@ -1,0 +1,21 @@
+{
+  "name": "@humanitic/agent-trace-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for querying agent traces with OTel-compatible spans",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "chokidar": "^3.6.0",
+    "yaml": "^2.4.0"
+  },
+  "bin": {
+    "agent-trace-mcp": "./server.js"
+  },
+  "keywords": ["mcp", "agent", "trace", "opentelemetry", "observability"],
+  "author": "Humanitic",
+  "license": "MIT"
+}

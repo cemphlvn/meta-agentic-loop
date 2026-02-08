@@ -1,0 +1,68 @@
+---
+id: OPP-001
+created: 2026-02-08T00:00:00Z
+detected_by: workflow-audit
+status: implementing  # Was 'proposed', now being implemented
+
+detection:
+  trigger: "Agent tried to read /.remembrance from kidlearnio subdirectory"
+  session: "2026-02-08-kidlearnio"
+  failure_type: enforcement_opportunity
+  impact: |
+    Read tool failed with "file not found"
+    Agent tried /Users/cem/humanitic/public/cem/kidlearnio/.remembrance
+    Should have been /Users/cem/humanitic/.remembrance
+    Required user intervention to diagnose and fix
+
+classification:
+  level: 2  # enforcement
+  domain: path_resolution
+  recurrence: 1  # First occurrence, but high likelihood of recurrence
+  severity: high  # Blocks core functionality
+
+current_state:
+  how_handled: "User identified issue, agent updated start.md with {ROOT} convention"
+  determinism_level: 1  # Now documented, not yet enforced
+  existing_mitigation: |
+    - start.md now has Path Resolution section
+    - {ROOT} convention documented
+    - Decision rule documented
+
+proposed_solution:
+  type: documentation+hook  # Implemented documentation, hook pending
+  name: "path-resolver"
+  description: |
+    1. DONE: Document {ROOT} convention in skills
+    2. TODO: Pre-tool hook that resolves {ROOT} placeholders
+    3. TODO: Validation that paths start from correct root
+  implementation_sketch: |
+    # Future hook implementation
+    resolve_humanitic_root() {
+      dir=$(pwd)
+      while [[ "$dir" != "/" ]]; do
+        if grep -q "Curiosity founders" "$dir/CLAUDE.md" 2>/dev/null; then
+          echo "$dir"
+          return 0
+        fi
+        dir=$(dirname "$dir")
+      done
+      return 1
+    }
+  effort: low
+  priority: high
+
+tracking:
+  proposed_date: 2026-02-08
+  documentation_date: 2026-02-08
+  implementation_date: null  # Hook not yet created
+  implemented_by: null
+  verification: null
+
+related:
+  remembrance_entry: null
+  hypothesis: null
+  files_updated:
+    - plugin/.claude/skills/start.md
+    - CLAUDE.md
+    - plugin/.claude/CORE_LOOP.md
+---

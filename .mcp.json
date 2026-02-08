@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "agent-trace": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/observability/mcp-server/server.js"],
+      "description": "Query OTel-compatible agent traces"
+    }
+  }
+}

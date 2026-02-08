@@ -72,9 +72,23 @@
       "matcher": "Task",
       "hooks": [
         {
-          "type": "prompt",
-          "prompt": "Verify agent being invoked has appropriate scope for the task",
-          "timeout": 5
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/validate-spawn.sh \"${TOOL_INPUT_subagent_type:-unknown}\" \"${TOOL_INPUT_description:-No description}\"",
+          "timeout": 5,
+          "description": "Validate agent exists in registry and log spawn intent"
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "Task",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/capture-result.sh \"${AGENT_SPAN_ID:-${AGENT_RUN_ID:-unknown}}\" \"success\" \"Agent completed\"",
+          "timeout": 5,
+          "description": "Capture agent execution result and duration"
         }
       ]
     }

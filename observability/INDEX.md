@@ -10,6 +10,7 @@
 | dynamic-rounds.sh | Self-optimizing round-based reporting | Background daemon |
 | utilization-tracker.sh | Agent/skill/process usage metrics | `/utilization` |
 | hypothesis-tracker.sh | Hypothesis lifecycle management | `/hypothesis` |
+| **workflow-audit/** | **Deterministic opportunity tracking** | **`/audit workflow`** |
 | cockpit/dashboard.html | Visual HTML dashboard | `/cockpit html` |
 
 ## Module Structure
@@ -21,6 +22,13 @@ observability/
 ├── dynamic-rounds.sh           # Self-optimizing rounds
 ├── utilization-tracker.sh      # Usage metrics
 ├── hypothesis-tracker.sh       # Hypothesis lifecycle
+├── workflow-audit/             # DETERMINISTIC OPPORTUNITY TRACKING
+│   ├── INDEX.md                # Full documentation
+│   ├── audit.sh                # Audit runner script
+│   ├── opportunities/          # OPP-XXX proposals
+│   │   └── OPP-XXX.yaml
+│   └── audits/                 # AUDIT-YYYY-MM-DD reports
+│       └── AUDIT-YYYY-MM-DD.yaml
 ├── cockpit/
 │   └── dashboard.html          # Visual dashboard
 ├── hypotheses/
@@ -159,4 +167,64 @@ cto-agent receives:
 
 ---
 
+## Deterministic Workflow Audit
+
+> **"What could have been scriptic, should become scriptic."**
+
+The workflow-audit module tracks agentic failures and proposes deterministic improvements.
+
+### Evolution Vector (Observability-Flexibility Duality)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  EVOLUTION: ad-hoc → observable → adaptive → flourishing                    │
+│                                                                              │
+│  Philosophy: NOT rigid determinism, YES intelligent adaptation              │
+│                                                                              │
+│  1_adhoc (0%)       Agent acts without memory or patterns                   │
+│  2_observable (40%) Patterns logged, failures tracked, learnings captured   │
+│  3_adaptive (70%)   System responds to patterns, proposes improvements      │
+│  4_flourishing (90%+) Intelligent balance of determinism and flexibility   │
+│                                                                              │
+│  THE BALANCE:                                                                │
+│    Deterministic WHERE: it prevents waste (validate external data)          │
+│    Flexible WHERE: it enables growth (solution paths, exploration)          │
+│    Observable ALWAYS: enables learning                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Opportunity Levels
+
+| Level | Type | Example | Solution Pattern |
+|-------|------|---------|------------------|
+| 1 | Validation | Model name not verified → 404 | Pre-validation hook |
+| 2 | Enforcement | Wrong .remembrance scope | Scope-checking hook |
+| 3 | Automation | Same pattern 3+ times | Create reusable script |
+| 4 | Self-Improvement | Same error type recurring | Crystallize + prevent |
+
+### Commands
+
+```bash
+/audit workflow          # Full audit
+/audit workflow --quick  # Quick check
+/opportunities           # List open opportunities
+/evolution               # Show evolution status
+```
+
+### Context Injection
+
+On session start, inject:
+```yaml
+workflow_audit_context:
+  determinism_coverage: 72%
+  open_opportunities: 3
+  evolution_stage: "3_scriptic → 4_deterministic"
+  proactive_prompts: true  # Agent reminded to look for opportunities
+```
+
+See `observability/workflow-audit/INDEX.md` for full documentation.
+
+---
+
 *Observation enables improvement. Hypotheses drive progress. The scientist never stops observing.*
+*What could have been scriptic, should become scriptic.*

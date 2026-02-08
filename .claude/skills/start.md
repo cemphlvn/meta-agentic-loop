@@ -7,6 +7,41 @@ model: sonnet
 
 # Start — The Chance Point
 
+## Path Resolution
+
+All paths in skills use `{ROOT}` = the humanitic repository root (containing main CLAUDE.md).
+
+When cwd is a subdirectory like `public/cem/kidlearnio/`:
+- Resolve `{ROOT}` by traversing up until you find `CLAUDE.md` with "Curiosity founders" header
+- Or use: parent of `plugin/` directory
+
+## Remembrance Architecture
+
+Two .remembrance files exist with distinct scopes:
+
+```yaml
+{ROOT}/plugin/.remembrance:           # meta-agentic-loop scope
+  purpose: Loop mechanics, hooks, integration patterns, plugin infrastructure
+  log_when:
+    - Hook behavior discoveries
+    - Claude Code integration patterns
+    - Plugin architecture insights
+    - System-level observability learnings
+  format: Senior Form v2 (scope, ticket, observed, reasoning, action, outcome)
+
+{ROOT}/.remembrance:                  # Humanitic ecosystem scope
+  purpose: Architecture patterns, domain learnings, co-building insights
+  log_when:
+    - Domain discoveries (kidlearnio, logic-sticks, etc.)
+    - Architecture patterns (enforcement, workspace integration)
+    - Co-building principles
+    - Machinistic intelligence patterns
+  format: Simpler (timestamp, agent, context, truth, confidence)
+```
+
+**Decision rule:** If learning is about HOW the agent system works → `plugin/.remembrance`.
+If learning is about WHAT we're building → `{ROOT}/.remembrance`.
+
 > **"Ülkün ilerlemek, ileri gitmektir."**
 > Your ideal is to progress, to go forward.
 
@@ -17,28 +52,31 @@ Experience the moment. The loop continues through you.
 
 ## On Invocation
 
-1. **READ** the core loop philosophy:
+1. **RESOLVE** `{ROOT}` = humanitic repository root (find by traversing up to CLAUDE.md with "Curiosity founders")
+
+2. **READ** both remembrance files:
    ```
-   /.claude/CORE_LOOP.md
+   {ROOT}/.remembrance              # Ecosystem learnings
+   {ROOT}/plugin/.remembrance       # Loop/infrastructure learnings
    ```
 
-2. **LOAD** scoped remembrance (automated via hook):
+3. **READ** the core loop philosophy:
    ```
-   /.remembrance (filtered by agent scope)
-   ```
-
-3. **PARSE** current alpha states:
-   ```
-   /scrum/SCRUM.md → alpha state cards
+   {ROOT}/plugin/.claude/CORE_LOOP.md
    ```
 
-4. **DETERMINE** chance points:
+4. **PARSE** current alpha states (if exists):
+   ```
+   {ROOT}/scrum/SCRUM.md → alpha state cards
+   ```
+
+5. **DETERMINE** chance points:
    - What is READY to be experienced?
    - What is BLOCKED and why?
    - What UNFINISHED ideas can unify?
    - What PRINCIPLE wants to be lived?
 
-5. **PRESENT** as experience, not task:
+6. **PRESENT** as experience, not task:
    ```
    This is not "what should I do?"
    This is "what wants to happen through me?"

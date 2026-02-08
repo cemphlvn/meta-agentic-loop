@@ -1,0 +1,159 @@
+# OpenTelemetry-Compatible Trace Schema for Agent Runs
+#
+# This schema enables:
+# - Hierarchical visualization (parent-child agent spawns)
+# - Time-travel debugging (start/end timestamps)
+# - Performance analysis (duration_ms)
+# - Filtering by tier/team
+#
+# Vision: 2050 backtracking requires OTel compatibility today.
+
+schema_version: "1.0"
+compatible_with: "OpenTelemetry Trace Specification v1.0"
+
+#─────────────────────────────────────────────────────────────────────────────
+# CORE IDENTIFIERS (OTel-compatible)
+#─────────────────────────────────────────────────────────────────────────────
+identifiers:
+  trace_id:
+    type: string
+    format: "32 hex characters (128-bit)"
+    description: "Unique session identifier. All agents in same session share this."
+    example: "4bf92f3577b34da6a3ce929d0e0e4736"
+
+  span_id:
+    type: string
+    format: "16 hex characters (64-bit)"
+    description: "Unique identifier for this specific agent run."
+    example: "00f067aa0ba902b7"
+
+  parent_span_id:
+    type: string
+    format: "16 hex characters (64-bit)"
+    description: "Span ID of the spawner. Null for root agents."
+    nullable: true
+    example: "00f067aa0ba902b7"
+
+#─────────────────────────────────────────────────────────────────────────────
+# OPERATION
+#─────────────────────────────────────────────────────────────────────────────
+operation:
+  operation_name:
+    type: string
+    description: "The agent_id being invoked"
+    example: "explore"
+
+  task_description:
+    type: string
+    description: "Human-readable description of what this agent is doing"
+    example: "Find files matching pattern *.ts"
+
+#─────────────────────────────────────────────────────────────────────────────
+# TIMING (ISO-8601)
+#─────────────────────────────────────────────────────────────────────────────
+timing:
+  start_time:
+    type: string
+    format: "ISO-8601 UTC"
+    description: "When the agent spawn was initiated"
+    example: "2026-02-08T14:30:00Z"
+
+  end_time:
+    type: string
+    format: "ISO-8601 UTC"
+    description: "When the agent completed (success/failure/timeout)"
+    nullable: true
+    example: "2026-02-08T14:31:23Z"
+
+  duration_ms:
+    type: integer
+    description: "Calculated duration in milliseconds"
+    nullable: true
+    example: 83000
+
+#─────────────────────────────────────────────────────────────────────────────
+# STATUS (OTel StatusCode)
+#─────────────────────────────────────────────────────────────────────────────
+status:
+  code:
+    type: enum
+    values:
+      - UNSET      # Span has not ended
+      - OK         # Success
+      - ERROR      # Failure or timeout
+    description: "OTel StatusCode"
+
+  message:
+    type: string
+    description: "Human-readable status message"
+    example: "Agent completed successfully"
+
+#─────────────────────────────────────────────────────────────────────────────
+# ATTRIBUTES (Custom, for filtering and visualization)
+#─────────────────────────────────────────────────────────────────────────────
+attributes:
+  agent.tier:
+    type: enum
+    values: [strategic, tactical, operational]
+    description: "Agent hierarchy tier from INDEX.md"
+    visualization: "Color coding in 3D graph"
+
+  agent.team:
+    type: string
+    description: "Team the agent belongs to"
+    example: "exploration"
+    visualization: "Cluster grouping in 3D graph"
+
+  agent.spawner:
+    type: string
+    description: "Agent ID of the spawner"
+    example: "orchestrator"
+
+  validation.status:
+    type: enum
+    values: [passed, warned, blocked]
+    description: "Whether spawn validation passed"
+
+  token.count:
+    type: integer
+    description: "Token count for this agent run (future)"
+    nullable: true
+    future: true
+
+#─────────────────────────────────────────────────────────────────────────────
+# FILE FORMAT
+#─────────────────────────────────────────────────────────────────────────────
+file_format:
+  pending:
+    path: "pending/{span_id}.yaml"
+    description: "In-flight agent runs"
+
+  completed:
+    path: "runs/{span_id}.yaml"
+    description: "Completed agent runs with full timing"
+
+  lineage:
+    path: "lineage/{trace_id}.yaml"
+    description: "Aggregated view of all spans in a trace"
+    future: true
+
+#─────────────────────────────────────────────────────────────────────────────
+# EXAMPLE SPAN (YAML)
+#─────────────────────────────────────────────────────────────────────────────
+example_span:
+  trace_id: "4bf92f3577b34da6a3ce929d0e0e4736"
+  span_id: "00f067aa0ba902b7"
+  parent_span_id: "a1b2c3d4e5f67890"
+  operation_name: "explore"
+  task_description: "Find authentication-related files in src/"
+  start_time: "2026-02-08T14:30:00Z"
+  end_time: "2026-02-08T14:31:23Z"
+  duration_ms: 83000
+  status:
+    code: "OK"
+    message: "Agent completed successfully"
+  attributes:
+    agent.tier: "operational"
+    agent.team: "exploration"
+    agent.spawner: "orchestrator"
+    validation.status: "passed"

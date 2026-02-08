@@ -88,3 +88,61 @@ outcome: |
 truth: Observability is a first-class concern. The system that watches itself can improve itself.
 confidence: 1.0
 ---
+
+---
+timestamp: 2026-02-08T03:00:00Z
+agent: orchestrator
+scope: system
+ticket: AGENT-TRACE-001
+observed: |
+  Critical gap discovered: Agent orchestration was documented but NOT observable.
+  - 16 agents documented in INDEX.md
+  - PreToolUse hook was just a PROMPT, not actual validation
+  - No agent spawn logging
+  - No lineage tracing (who spawned who)
+  - No result capture (duration, success/failure)
+
+  This means we could not:
+  - Trace what agents were invoked in a session
+  - Backtrack decisions (why was this agent chosen?)
+  - Measure agent performance
+  - Detect spawn failures
+
+reasoning: |
+  Scriptic architecture ENABLES agentic intelligence.
+  Without observability, we cannot:
+  - Learn from agent behavior patterns
+  - Detect and fix problematic spawn patterns
+  - Maintain the agentic-scriptic duality
+
+  The documentation created an illusion of structure without actual scaffolding.
+  This is a common anti-pattern: documenting intent without implementing observability.
+
+action: |
+  Created observability/agent-trace/ infrastructure:
+  - validate-spawn.sh: Validates agent exists in INDEX.md, logs spawn intent
+  - capture-result.sh: Captures completion, calculates duration
+  - runs/: Completed agent runs with full metadata
+  - pending/: In-flight agent runs
+  - lineage/: (future) Parent-child relationships
+
+  Updated hooks.json:
+  - PreToolUse now runs actual validation (not just prompt)
+  - PostToolUse captures results
+
+outcome: |
+  Agent spawning is now:
+  - Validated: Must exist in INDEX.md with Active/Master status
+  - Logged: Every spawn creates a run file
+  - Traceable: run_id links spawn to completion
+  - Measurable: Duration captured
+
+truth: |
+  Documentation without observability is theater.
+  The agentic-scriptic duality requires ACTUAL scriptic infrastructure.
+  Prompts are not enforcement. Commands are enforcement.
+  Every agent spawn should be: validated, logged, traceable, measurable.
+
+confidence: 1.0
+shape_shift: true
+---
