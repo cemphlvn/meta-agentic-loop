@@ -1,55 +1,89 @@
 ---
 description: Run observability workflow audit
-allowed-tools: Bash, Read
+allowed-tools: Bash(bash:*)
 argument-hint: [mode]
 ---
 
 # /mal-audit — Workflow Observability Audit
 
-Audit the observability infrastructure for gaps and improvements.
+!`bash -c '
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-/Users/cem/humanitic/plugin}"
+AUDIT_DIR="$PLUGIN_ROOT/observability/workflow-audit"
+MODE="${1:-full}"
 
-## Modes
+case "$MODE" in
+    full)
+        echo "═══ FULL OBSERVABILITY AUDIT ═══"
+        echo ""
+        if [ -f "$AUDIT_DIR/audit.sh" ]; then
+            bash "$AUDIT_DIR/audit.sh"
+        else
+            echo "Audit script not found. Running inline audit..."
+            echo ""
+            echo "Infrastructure:"
+            test -d "$PLUGIN_ROOT/observability/agent-trace" && echo "  ✓ Agent trace" || echo "  ✗ Agent trace"
+            test -d "$AUDIT_DIR" && echo "  ✓ Workflow audit" || echo "  ✗ Workflow audit"
+            test -f "$PLUGIN_ROOT/hooks/hooks.json" && echo "  ✓ Hooks config" || echo "  ✗ Hooks config"
+        fi
+        ;;
+    coverage)
+        echo "═══ OBSERVABILITY COVERAGE ═══"
+        echo ""
+        if [ -f "$AUDIT_DIR/audit.sh" ]; then
+            bash "$AUDIT_DIR/audit.sh" coverage
+        else
+            # Inline coverage check
+            TOTAL_HOOKS=$(grep -c "\"command\":" "$PLUGIN_ROOT/hooks/hooks.json" 2>/dev/null || echo 0)
+            TRACE_HOOKS=$(grep -c "agent-trace" "$PLUGIN_ROOT/hooks/hooks.json" 2>/dev/null || echo 0)
+            echo "Hook coverage: $TRACE_HOOKS/$TOTAL_HOOKS hooks with tracing"
+        fi
+        ;;
+    opportunities)
+        echo "═══ IMPROVEMENT OPPORTUNITIES ═══"
+        echo ""
+        if [ -d "$AUDIT_DIR/opportunities" ]; then
+            for f in "$AUDIT_DIR/opportunities/"*.yaml; do
+                [ -f "$f" ] || continue
+                echo "---"
+                grep -E "^(id|title|priority|status):" "$f"
+            done
+        else
+            echo "(No opportunities directory)"
+        fi
+        ;;
+    evolution)
+        echo "═══ OBSERVABILITY EVOLUTION ═══"
+        echo ""
+        echo "Trajectory: ad-hoc → observable → adaptive → flourishing"
+        echo ""
+        if [ -f "$AUDIT_DIR/audit.sh" ]; then
+            bash "$AUDIT_DIR/audit.sh" evolution
+        else
+            # Inline evolution check
+            SPANS=$(ls "$PLUGIN_ROOT/observability/agent-trace/runs/"*.yaml 2>/dev/null | wc -l | tr -d " ")
+            if [ "$SPANS" -gt 100 ]; then
+                echo "Current stage: adaptive ($SPANS spans)"
+            elif [ "$SPANS" -gt 10 ]; then
+                echo "Current stage: observable ($SPANS spans)"
+            elif [ "$SPANS" -gt 0 ]; then
+                echo "Current stage: emerging ($SPANS spans)"
+            else
+                echo "Current stage: ad-hoc (no spans yet)"
+            fi
+        fi
+        ;;
+    *)
+        echo "Usage: /mal-audit [full|coverage|opportunities|evolution]"
+        echo ""
+        echo "Modes:"
+        echo "  full          Complete audit (default)"
+        echo "  coverage      Observability coverage metrics"
+        echo "  opportunities List improvement opportunities"
+        echo "  evolution     Show evolution trajectory"
+        echo ""
+        echo "Philosophy: Intelligent adaptation WITH clear observability"
+        ;;
+esac
+' -- "$1" 2>&1 || echo "AUDIT_ERROR"`
 
-### full (default)
-Run complete audit:
-```bash
-!`${CLAUDE_PLUGIN_ROOT}/observability/workflow-audit/audit.sh`
-```
-
-### coverage
-Show observability coverage metrics:
-```bash
-!`${CLAUDE_PLUGIN_ROOT}/observability/workflow-audit/audit.sh coverage`
-```
-
-### opportunities
-List improvement opportunities:
-```bash
-!`ls ${CLAUDE_PLUGIN_ROOT}/observability/workflow-audit/opportunities/*.yaml 2>/dev/null | while read f; do echo "---"; grep -E "^(id|title|priority|status):" "$f"; done`
-```
-
-### evolution
-Show observability evolution trajectory:
-```bash
-!`${CLAUDE_PLUGIN_ROOT}/observability/workflow-audit/audit.sh evolution`
-```
-
-## Philosophy
-
-The audit follows the agentic-scriptic duality:
-- **Agentic Intelligence**: Flexibility under uncertainty
-- **Scriptic Architecture**: Observability and traceability
-
-Goal: NOT rigid determinism, but intelligent adaptation WITH clear observability.
-
-## Evolution Trajectory
-
-```
-ad-hoc → observable → adaptive → flourishing
-```
-
-## Usage
-
-- `/mal-audit` — Run full audit
-- `/mal-audit coverage` — Show coverage %
-- `/mal-audit opportunities` — List OPPs
+Analyze the audit output above. For AUDIT_ERROR, run `/mal-observe health` to diagnose.

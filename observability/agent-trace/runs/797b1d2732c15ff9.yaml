@@ -1,0 +1,36 @@
+# OpenTelemetry-Compatible Span (Pending)
+# Schema: observability/agent-trace/schema.yaml
+
+# Identifiers (OTel)
+trace_id: "8c7640b6d9d4fb5bf37d26a3a8199e95"
+span_id: "797b1d2732c15ff9"
+parent_span_id: "null"
+
+# Operation
+operation_name: "cto-agent"
+task_description: |
+  Parent task
+
+# Timing
+start_time: "2026-02-08T14:10:56Z"
+start_time_unix_nano: 1770559856000000000
+
+# Status (UNSET while pending)
+
+# Attributes
+attributes:
+  agent.tier: "operational"
+  agent.spawner: "orchestrator"
+  validation.status: "passed"
+
+# Completion (OTel)
+end_time: "2026-02-08T14:12:16Z"
+end_time_unix_nano: 1770559936000000000
+duration_ms: 80000
+
+# Status (OTel StatusCode)
+status:
+  code: "OK"
+  message: |
+    Test completion
+---

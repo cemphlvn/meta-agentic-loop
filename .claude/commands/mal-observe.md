@@ -1,41 +1,65 @@
 ---
 description: Real-time agent observability dashboard
-allowed-tools: Bash, Read
+allowed-tools: Bash(bash:*)
 argument-hint: [mode]
 ---
 
-# /mal-observe — Real-time Observability
+# /mal-observe — Observability Dashboard
 
-Monitor agent activity in real-time.
+Mode: $1
 
-## Modes
+!`bash -c '
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-/Users/cem/humanitic/plugin}"
+TRACE_DIR="$PLUGIN_ROOT/observability/agent-trace"
+MODE="${1:-summary}"
 
-### live (default)
-Watch agent events as they happen:
-```bash
-!`${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/commands/events.sh --tail`
-```
+case "$MODE" in
+    live)
+        echo "═══ LIVE EVENT STREAM ═══"
+        echo "(showing last 10 events)"
+        bash "$TRACE_DIR/commands/events.sh" --limit 10
+        ;;
+    summary)
+        echo "═══ AGENT TRACE SUMMARY ═══"
+        echo ""
+        bash "$TRACE_DIR/commands/stats.sh" 2>/dev/null || echo "(no stats yet)"
+        echo ""
+        echo "═══ PENDING SPANS ═══"
+        PENDING=$(ls "$TRACE_DIR/pending/"*.yaml 2>/dev/null | wc -l | tr -d " ")
+        echo "$PENDING agents in-flight"
+        echo ""
+        echo "═══ RECENT EVENTS ═══"
+        bash "$TRACE_DIR/commands/events.sh" --limit 5 2>/dev/null || echo "(no events)"
+        ;;
+    health)
+        echo "═══ OBSERVABILITY HEALTH ═══"
+        echo ""
+        echo "Infrastructure:"
+        test -f "$TRACE_DIR/schema.yaml" && echo "  ✓ Schema" || echo "  ✗ Schema MISSING"
+        test -f "$TRACE_DIR/validate-spawn.sh" && echo "  ✓ PreToolUse hook" || echo "  ✗ PreToolUse MISSING"
+        test -f "$TRACE_DIR/capture-result.sh" && echo "  ✓ PostToolUse hook" || echo "  ✗ PostToolUse MISSING"
+        test -f "$PLUGIN_ROOT/hooks/hooks.json" && echo "  ✓ Hooks config" || echo "  ✗ Hooks MISSING"
+        echo ""
+        echo "Data:"
+        RUNS=$(ls "$TRACE_DIR/runs/"*.yaml 2>/dev/null | wc -l | tr -d " ")
+        EVENTS=$(wc -l < "$TRACE_DIR/events/queue.jsonl" 2>/dev/null | tr -d " " || echo 0)
+        echo "  Completed spans: $RUNS"
+        echo "  Events logged: $EVENTS"
+        ;;
+    pending)
+        echo "═══ PENDING SPANS ═══"
+        ls -la "$TRACE_DIR/pending/" 2>/dev/null || echo "No pending spans"
+        ;;
+    *)
+        echo "Usage: /mal-observe [live|summary|health|pending]"
+        echo ""
+        echo "Modes:"
+        echo "  summary  - Quick dashboard (default)"
+        echo "  live     - Recent events"
+        echo "  health   - Infrastructure check"
+        echo "  pending  - In-flight agents"
+        ;;
+esac
+' -- "$1" 2>&1 || echo "OBSERVE_ERROR"`
 
-### summary
-Current session summary:
-```bash
-!`echo "═══ AGENT TRACE SUMMARY ═══" && ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/commands/stats.sh && echo "" && echo "═══ PENDING SPANS ═══" && ls -1 ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/pending/*.yaml 2>/dev/null | wc -l | xargs -I{} echo "{} agents in-flight" && echo "" && echo "═══ RECENT EVENTS ═══" && ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/commands/events.sh --limit 5`
-```
-
-### pending
-Show in-flight (pending) agent runs:
-```bash
-!`ls -la ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/pending/ 2>/dev/null || echo "No pending spans"`
-```
-
-### health
-Check observability system health:
-```bash
-!`echo "Hooks: " && test -f ${CLAUDE_PLUGIN_ROOT}/hooks/hooks.json && echo "OK" || echo "MISSING" && echo "Runs dir: " && ls ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/ 2>/dev/null | wc -l | xargs -I{} echo "{} completed spans" && echo "Events queue: " && wc -l < ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/events/queue.jsonl 2>/dev/null || echo "0 events"`
-```
-
-## Usage
-
-- `/mal-observe` — Start live event stream
-- `/mal-observe summary` — Quick dashboard
-- `/mal-observe health` — System health check
+Present the observability status above. Highlight any issues that need attention.

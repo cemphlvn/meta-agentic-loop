@@ -1,0 +1,10 @@
+{"timestamp":"2026-02-08T13:56:05Z","event_type":"agent:spawn","span_id":"span1","payload":{"op":"test1"}}
+{"timestamp":"2026-02-08T13:56:05Z","event_type":"agent:complete","span_id":"span1","payload":{"d":100}}
+{"timestamp":"2026-02-08T14:09:53Z","event_type":"agent:spawn","span_id":"3024a26be9b4d1f3","payload":{"trace_id":"876bbd640cd69c2da3361bbce487eb66","parent_span_id":"null","operation":"librarian","tier":"operational","spawner":"orchestrator"}}
+{"timestamp":"2026-02-08T14:10:14Z","event_type":"agent:complete","span_id":"3024a26be9b4d1f3","payload":{"trace_id":"876bbd640cd69c2da3361bbce487eb66","operation":"librarian","duration_ms":21000,"status_code":"OK"}}
+{"timestamp":"2026-02-08T14:10:37Z","event_type":"agent:spawn","span_id":"a3cbae79dfeb762e","payload":{"trace_id":"876bbd640cd69c2da3361bbce487eb66","parent_span_id":"null","operation":"librarian","tier":"operational","spawner":"orchestrator"}}
+{"timestamp":"2026-02-08T14:10:37Z","event_type":"agent:complete","span_id":"a3cbae79dfeb762e","payload":{"trace_id":"876bbd640cd69c2da3361bbce487eb66","operation":"librarian","duration_ms":0,"status_code":"OK"}}
+{"timestamp":"2026-02-08T14:10:56Z","event_type":"agent:spawn","span_id":"797b1d2732c15ff9","payload":{"trace_id":"8c7640b6d9d4fb5bf37d26a3a8199e95","parent_span_id":"null","operation":"cto-agent","tier":"operational","spawner":"orchestrator"}}
+{"timestamp":"2026-02-08T14:10:56Z","event_type":"agent:spawn","span_id":"84896b02019e165c","payload":{"trace_id":"8c7640b6d9d4fb5bf37d26a3a8199e95","parent_span_id":"797b1d2732c15ff9","operation":"librarian","tier":"operational","spawner":"orchestrator"}}
+{"timestamp":"2026-02-08T14:12:17Z","event_type":"agent:complete","span_id":"797b1d2732c15ff9","payload":{"trace_id":"8c7640b6d9d4fb5bf37d26a3a8199e95","operation":"cto-agent","duration_ms":80000,"status_code":"OK"}}
+{"timestamp":"2026-02-08T14:12:17Z","event_type":"agent:complete","span_id":"84896b02019e165c","payload":{"trace_id":"8c7640b6d9d4fb5bf37d26a3a8199e95","operation":"librarian","duration_ms":81000,"status_code":"OK"}}

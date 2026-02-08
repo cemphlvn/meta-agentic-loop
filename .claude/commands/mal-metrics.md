@@ -1,64 +1,118 @@
 ---
-description: Derive metrics from agent traces for engineering improvements
-allowed-tools: Bash, Read
+description: Trace-derived metrics for engineering improvements
+allowed-tools: Bash(bash:*)
 argument-hint: [metric-type]
 ---
 
-# /mal-metrics — Trace-Derived Metrics
+# /mal-metrics — Engineering Metrics
 
-Extract actionable metrics from agent traces to prove engineering improvements.
+!`bash -c '
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-/Users/cem/humanitic/plugin}"
+RUNS_DIR="$PLUGIN_ROOT/observability/agent-trace/runs"
+METRIC="${1:-all}"
 
-## Core Metrics
+count_files() {
+    ls "$1"/*.yaml 2>/dev/null | wc -l | tr -d " "
+}
 
-### determinism
-Measure how deterministically agents are spawning:
-```bash
-!`echo "═══ DETERMINISM METRICS ═══" && echo "" && VALIDATED=$(grep -l "validation.status: \"passed\"" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null | wc -l | tr -d ' ') && WARNED=$(grep -l "validation.status: \"warned\"" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null | wc -l | tr -d ' ') && TOTAL=$((VALIDATED + WARNED)) && echo "Validated spawns: $VALIDATED" && echo "Warned spawns: $WARNED" && echo "Total: $TOTAL" && if [ $TOTAL -gt 0 ]; then RATE=$((VALIDATED * 100 / TOTAL)); echo "Validation rate: ${RATE}%"; fi && echo "" && echo "Orphan spans (no parent tracking):" && grep -l "parent_span_id: null" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null | wc -l | tr -d ' '`
-```
+case "$METRIC" in
+    determinism)
+        echo "═══ DETERMINISM METRICS ═══"
+        echo ""
+        TOTAL=$(count_files "$RUNS_DIR")
+        if [ "$TOTAL" -gt 0 ]; then
+            VALIDATED=$(grep -l "validation.status: \"passed\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            WARNED=$(grep -l "validation.status: \"warned\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            RATE=$((VALIDATED * 100 / (VALIDATED + WARNED + 1)))
+            echo "Validated spawns: $VALIDATED"
+            echo "Warned spawns:    $WARNED"
+            echo "Validation rate:  ${RATE}%"
+            echo ""
+            [ $RATE -eq 100 ] && echo "✓ TARGET MET: 100% validation" || echo "⚠ TARGET: 100%"
+        else
+            echo "(No data - run agents first)"
+        fi
+        ;;
+    lineage)
+        echo "═══ LINEAGE METRICS ═══"
+        echo ""
+        TOTAL=$(count_files "$RUNS_DIR")
+        if [ "$TOTAL" -gt 0 ]; then
+            WITH_PARENT=$(grep -l "parent_span_id: \"[a-f0-9]" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            ROOTS=$(grep -l "parent_span_id: null\|parent_span_id: \"null\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            COVERAGE=$(( (WITH_PARENT + ROOTS) * 100 / TOTAL ))
+            echo "Total spans:      $TOTAL"
+            echo "Root spans:       $ROOTS"
+            echo "With parent:      $WITH_PARENT"
+            echo "Lineage coverage: ${COVERAGE}%"
+            echo ""
+            [ $COVERAGE -eq 100 ] && echo "✓ TARGET MET: Complete lineage" || echo "⚠ TARGET: 100%"
+        else
+            echo "(No data - run agents first)"
+        fi
+        ;;
+    success)
+        echo "═══ SUCCESS METRICS ═══"
+        echo ""
+        TOTAL=$(count_files "$RUNS_DIR")
+        if [ "$TOTAL" -gt 0 ]; then
+            OK=$(grep -l "code: \"OK\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            ERROR=$(grep -l "code: \"ERROR\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            COMPLETED=$((OK + ERROR))
+            [ $COMPLETED -gt 0 ] && RATE=$((OK * 100 / COMPLETED)) || RATE=0
+            echo "Successful: $OK"
+            echo "Failed:     $ERROR"
+            echo "Success rate: ${RATE}%"
+            echo ""
+            [ $RATE -ge 95 ] && echo "✓ TARGET MET: >=95% success" || echo "⚠ TARGET: >=95%"
+        else
+            echo "(No data - run agents first)"
+        fi
+        ;;
+    latency)
+        echo "═══ LATENCY METRICS ═══"
+        echo ""
+        if [ -d "$RUNS_DIR" ]; then
+            DURATIONS=$(grep "^duration_ms:" "$RUNS_DIR"/*.yaml 2>/dev/null | sed "s/.*duration_ms: //" | grep -v null | sort -n)
+            if [ -n "$DURATIONS" ]; then
+                COUNT=$(echo "$DURATIONS" | wc -l | tr -d " ")
+                MIN=$(echo "$DURATIONS" | head -1)
+                MAX=$(echo "$DURATIONS" | tail -1)
+                SUM=$(echo "$DURATIONS" | awk "{sum+=\$1} END {print sum}")
+                AVG=$((SUM / COUNT))
+                echo "Count:  $COUNT"
+                echo "Min:    ${MIN}ms"
+                echo "Max:    ${MAX}ms"
+                echo "Avg:    ${AVG}ms"
+            else
+                echo "(No duration data)"
+            fi
+        else
+            echo "(No data - run agents first)"
+        fi
+        ;;
+    all)
+        echo "═══ ALL METRICS ═══"
+        echo ""
+        "$0" determinism
+        echo ""
+        "$0" lineage
+        echo ""
+        "$0" success
+        echo ""
+        "$0" latency
+        ;;
+    *)
+        echo "Usage: /mal-metrics [determinism|lineage|success|latency|all]"
+        echo ""
+        echo "Metrics:"
+        echo "  determinism  Spawn validation rates"
+        echo "  lineage      Parent-child tracking"
+        echo "  success      Success/failure rates"
+        echo "  latency      Duration distribution"
+        echo "  all          All metrics (default)"
+        ;;
+esac
+' -- "$1" 2>&1 || echo "METRICS_ERROR"`
 
-### latency
-Agent execution latency distribution:
-```bash
-!`echo "═══ LATENCY METRICS ═══" && echo "" && echo "Duration distribution (ms):" && grep "^duration_ms:" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null | sed 's/duration_ms: //' | sort -n | awk 'BEGIN{min=999999999;max=0;sum=0;count=0} {if($1!="null"){v=$1;if(v<min)min=v;if(v>max)max=v;sum+=v;count++}} END{if(count>0){avg=sum/count;print "  Min: "min"ms";print "  Max: "max"ms";print "  Avg: "int(avg)"ms";print "  Count: "count}else{print "  No data"}}'`
-```
-
-### success
-Success/failure rates:
-```bash
-!`echo "═══ SUCCESS METRICS ═══" && echo "" && OK=$(grep -c "code: \"OK\"" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null || echo 0) && ERROR=$(grep -c "code: \"ERROR\"" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null || echo 0) && UNSET=$(grep -c "code: \"UNSET\"" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null || echo 0) && TOTAL=$((OK + ERROR)) && echo "Successful: $OK" && echo "Failed: $ERROR" && echo "In-flight: $UNSET" && if [ $TOTAL -gt 0 ]; then RATE=$((OK * 100 / TOTAL)); echo "Success rate: ${RATE}%"; fi`
-```
-
-### lineage
-Lineage completeness (parent-child tracking):
-```bash
-!`echo "═══ LINEAGE METRICS ═══" && echo "" && TOTAL=$(ls ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null | wc -l | tr -d ' ') && WITH_PARENT=$(grep -l "parent_span_id: \"[a-f0-9]" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null | wc -l | tr -d ' ') && ROOTS=$(grep -l "parent_span_id: null" ${CLAUDE_PLUGIN_ROOT}/observability/agent-trace/runs/*.yaml 2>/dev/null | wc -l | tr -d ' ') && echo "Total spans: $TOTAL" && echo "With parent: $WITH_PARENT" && echo "Root spans: $ROOTS" && if [ $TOTAL -gt 0 ]; then LINKED=$((WITH_PARENT + ROOTS)); RATE=$((LINKED * 100 / TOTAL)); echo "Lineage coverage: ${RATE}%"; fi`
-```
-
-### all
-Show all metrics:
-```bash
-!`${CLAUDE_PLUGIN_ROOT}/.claude/commands/mal-metrics.md determinism && echo "" && ${CLAUDE_PLUGIN_ROOT}/.claude/commands/mal-metrics.md latency && echo "" && ${CLAUDE_PLUGIN_ROOT}/.claude/commands/mal-metrics.md success && echo "" && ${CLAUDE_PLUGIN_ROOT}/.claude/commands/mal-metrics.md lineage`
-```
-
-## Derived Insights
-
-These metrics enable:
-1. **Validation Rate** — Are agents spawning through proper channels?
-2. **Latency Distribution** — Where are bottlenecks?
-3. **Success Rate** — What's the failure pattern?
-4. **Lineage Coverage** — Is parent-child tracking working?
-
-## Engineering Improvement Targets
-
-| Metric | Current | Target | Action |
-|--------|---------|--------|--------|
-| Validation Rate | ? | 100% | Fix span_id passing |
-| Lineage Coverage | ? | 100% | Ensure parent_span_id set |
-| Success Rate | ? | >95% | Investigate failures |
-
-## Usage
-
-- `/mal-metrics determinism` — Validation metrics
-- `/mal-metrics latency` — Timing distribution
-- `/mal-metrics success` — Success/failure rates
-- `/mal-metrics all` — Complete dashboard
+Analyze the metrics above and provide engineering improvement recommendations.
