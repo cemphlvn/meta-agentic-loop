@@ -94,13 +94,53 @@ case "$METRIC" in
     all)
         echo "═══ ALL METRICS ═══"
         echo ""
-        "$0" determinism
+        # Inline each metric (cannot use $0 in bash -c)
+        echo "── DETERMINISM ──"
+        TOTAL=$(count_files "$RUNS_DIR")
+        if [ "$TOTAL" -gt 0 ]; then
+            VALIDATED=$(grep -l "validation.status: \"passed\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            WARNED=$(grep -l "validation.status: \"warned\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            RATE=$((VALIDATED * 100 / (VALIDATED + WARNED + 1)))
+            echo "Validation rate: ${RATE}%"
+        else
+            echo "(no data)"
+        fi
         echo ""
-        "$0" lineage
+        echo "── LINEAGE ──"
+        if [ "$TOTAL" -gt 0 ]; then
+            WITH_PARENT=$(grep -l "parent_span_id: \"[a-f0-9]" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            ROOTS=$(grep -l "parent_span_id: null\|parent_span_id: \"null\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            COVERAGE=$(( (WITH_PARENT + ROOTS) * 100 / TOTAL ))
+            echo "Lineage coverage: ${COVERAGE}%"
+        else
+            echo "(no data)"
+        fi
         echo ""
-        "$0" success
+        echo "── SUCCESS ──"
+        if [ "$TOTAL" -gt 0 ]; then
+            OK=$(grep -l "code: \"OK\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            ERROR=$(grep -l "code: \"ERROR\"" "$RUNS_DIR"/*.yaml 2>/dev/null | wc -l | tr -d " ")
+            COMPLETED=$((OK + ERROR))
+            [ $COMPLETED -gt 0 ] && RATE=$((OK * 100 / COMPLETED)) || RATE=0
+            echo "Success rate: ${RATE}%"
+        else
+            echo "(no data)"
+        fi
         echo ""
-        "$0" latency
+        echo "── LATENCY ──"
+        if [ -d "$RUNS_DIR" ]; then
+            DURATIONS=$(grep "^duration_ms:" "$RUNS_DIR"/*.yaml 2>/dev/null | sed "s/.*duration_ms: //" | grep -v null | sort -n)
+            if [ -n "$DURATIONS" ]; then
+                COUNT=$(echo "$DURATIONS" | wc -l | tr -d " ")
+                SUM=$(echo "$DURATIONS" | awk "{sum+=\$1} END {print sum}")
+                AVG=$((SUM / COUNT))
+                echo "Avg latency: ${AVG}ms ($COUNT samples)"
+            else
+                echo "(no duration data)"
+            fi
+        else
+            echo "(no data)"
+        fi
         ;;
     *)
         echo "Usage: /mal-metrics [determinism|lineage|success|latency|all]"
